@@ -1,0 +1,36 @@
+# Secrets and environment files
+.env
+.env.*
+!.env.example
+!.env.production.example
+.env.production
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Node / frontend build output
+node_modules/
+dist/
+*.tsbuildinfo
+playwright-report/
+test-results/
+
+# Local databases and uploaded media
+*.sqlite3
+*.db
+vapid_keys.json
+media/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Deployment credentials
+*.pem
+*_github_deploy_key
+*_github_deploy_key.pub
+.ssh/

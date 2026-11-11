@@ -1,0 +1,59 @@
+{
+  "name": "Youth Quest Theme Assets",
+  "themes": {
+    "space": {
+      "background": "/quest-media/themes/backgrounds/space-background.jpg",
+      "banner": "/quest-media/themes/banners/space-banner.jpg",
+      "icon": "/quest-media/themes/theme-icons/space/space-icon.png",
+      "nav": "#17665B",
+      "accent": "#D98A22"
+    },
+    "cleaning": {
+      "background": "/quest-media/themes/backgrounds/cleaning-background.jpg",
+      "banner": "/quest-media/themes/banners/cleaning-banner.jpg",
+      "icon": "/quest-media/themes/theme-icons/cleaning/cleaning-icon.png",
+      "nav": "#237A48",
+      "accent": "#2E9B69"
+    },
+    "music": {
+      "background": "/quest-media/themes/backgrounds/music-background.jpg",
+      "banner": "/quest-media/themes/banners/music-banner.jpg",
+      "icon": "/quest-media/themes/theme-icons/music/music-icon.png",
+      "nav": "#A94136",
+      "accent": "#D95D4F"
+    },
+    "arts": {
+      "background": "/quest-media/themes/backgrounds/arts-background.jpg",
+      "banner": "/quest-media/themes/banners/arts-banner.jpg",
+      "icon": "/quest-media/themes/theme-icons/arts/arts-icon.png",
+      "nav": "#A85B18",
+      "accent": "#E9A72E"
+    },
+    "games": {
+      "background": "/quest-media/themes/backgrounds/games-background.jpg",
+      "banner": "/quest-media/themes/banners/games-banner.jpg",
+      "icon": "/quest-media/themes/theme-icons/games/games-icon.png",
+      "nav": "#176D5A",
+      "accent": "#2E9B69"
+    }
+  },
+  "rewardAssets": {
+    "trophy": "/quest-media/themes/rewards/trophy.png",
+    "scratchCard": "/quest-media/themes/rewards/scratch-card.svg",
+    "medal": "/quest-media/themes/rewards/medal.png",
+    "treasureChest": "/quest-media/themes/rewards/treasure-chest.png",
+    "star": "/quest-media/themes/rewards/star.png",
+    "rocket": "/quest-media/themes/rewards/rocket.png",
+    "artPalette": "/quest-media/themes/rewards/art-palette.png",
+    "musicNote": "/quest-media/themes/rewards/music-note.png",
+    "gameController": "/quest-media/themes/rewards/game-controller.png",
+    "ecoGlobe": "/quest-media/themes/rewards/eco-globe.png",
+    "giftBox": "/quest-media/themes/rewards/icons/gift-box.png",
+    "voucher": "/quest-media/themes/rewards/icons/voucher.png",
+    "badge": "/quest-media/themes/rewards/icons/badge.png",
+    "xpBolt": "/quest-media/themes/rewards/icons/xp-bolt.png",
+    "heart": "/quest-media/themes/rewards/icons/heart.png",
+    "mysteryBox": "/quest-media/themes/rewards/icons/mystery-box.png",
+    "celebration": "/quest-media/themes/rewards/icons/celebration.png"
+  }
+}

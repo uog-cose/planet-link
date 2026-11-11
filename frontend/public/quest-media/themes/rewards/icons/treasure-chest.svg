@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Treasure Chest icon"><defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFE78A"/><stop offset=".52" stop-color="#F4B83F"/><stop offset="1" stop-color="#D98A22"/></linearGradient>
+    <linearGradient id="green" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#63C58A"/><stop offset="1" stop-color="#237A48"/></linearGradient>
+    <linearGradient id="coral" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FF9675"/><stop offset="1" stop-color="#D95D4F"/></linearGradient>
+    <linearGradient id="silver" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#F4F3E8"/><stop offset="1" stop-color="#C7D0C5"/></linearGradient>
+    <linearGradient id="wood" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#DFA45C"/><stop offset="1" stop-color="#A85B18"/></linearGradient>
+    </defs><g stroke-linecap="round" stroke-linejoin="round"><path d="M88 210q0-86 82-86h172q82 0 82 86v172H88z" fill="url(#wood)" stroke="#804A23" stroke-width="14"/><path d="M77 214h358v74H77z" fill="url(#gold)" stroke="#804A23" stroke-width="14"/><path d="M112 300h288v70H112z" fill="#B86A2D" stroke="#804A23" stroke-width="12"/><path d="M231 214h50v156h-50z" fill="#F6C65B" stroke="#A85B18" stroke-width="10"/><rect x="220" y="273" width="72" height="77" rx="16" fill="#FFF0B8" stroke="#A85B18" stroke-width="10"/><circle cx="256" cy="307" r="10" fill="#A85B18"/></g></svg>

@@ -1,0 +1,91 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:?Set DB_NAME in .env.production}
+      POSTGRES_USER: ${DB_USER:?Set DB_USER in .env.production}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env.production}
+    volumes:
+      - youthquest_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    networks: [internal]
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    env_file: .env.production
+    environment:
+      APP_ENV: prod
+      DEBUG: "false"
+      ENABLE_QUICK_LOGIN: "false"
+      DB_ENGINE: postgres
+      DB_HOST: db
+      DB_PORT: 5432
+      SEED_DEMO: "false"
+    volumes:
+      - youthquest_media:/app/media
+      - youthquest_static:/app/staticfiles
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health/', timeout=3)"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    networks: [internal]
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_APP_ENV: prod
+        VITE_APP_NAME: ${APP_NAME:-Youth Quest}
+        VITE_API_URL: /api
+        VITE_ENABLE_PWA: "true"
+        VITE_ENABLE_QUICK_LOGIN: "false"
+        VITE_PUBLIC_APP_URL: https://${DOMAIN:?Set DOMAIN in .env.production}
+    restart: unless-stopped
+    volumes:
+      - youthquest_media:/var/www/media:ro
+      - youthquest_static:/var/www/static:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks: [internal]
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN in .env.production}
+      ACME_EMAIL: ${ACME_EMAIL:?Set ACME_EMAIL in .env.production}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+    networks: [internal]
+
+volumes:
+  youthquest_postgres:
+  youthquest_media:
+  youthquest_static:
+  caddy_data:
+  caddy_config:
+
+networks:
+  internal:
+    driver: bridge

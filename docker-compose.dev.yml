@@ -1,0 +1,58 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-youthquest}
+      POSTGRES_USER: ${DB_USER:-youthquest}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-local-only-youthquest-password}
+    ports:
+      - "127.0.0.1:${DB_FORWARD_PORT:-5433}:5432"
+    volumes:
+      - youthquest_postgres_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  backend:
+    command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+    environment:
+      DB_ENGINE: postgres
+      DB_NAME: ${DB_NAME:-youthquest}
+      DB_USER: ${DB_USER:-youthquest}
+      DB_PASSWORD: ${DB_PASSWORD:-local-only-youthquest-password}
+      DB_HOST: db
+      DB_PORT: 5432
+      APP_DATA_DIR: /app/data
+      DEBUG: "true"
+      APP_ENV: local
+      ENABLE_QUICK_LOGIN: "true"
+    volumes:
+      - ./backend:/app
+      - youthquest_data_dev:/app/data
+      - youthquest_media_dev:/app/media
+      - youthquest_static_dev:/app/staticfiles
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      target: build
+    environment:
+      API_PROXY_TARGET: http://backend:8000
+      VITE_APP_ENV: local
+      VITE_ENABLE_QUICK_LOGIN: "true"
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "80"]
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+volumes:
+  youthquest_postgres_dev:
+  youthquest_data_dev:
+  youthquest_media_dev:
+  youthquest_static_dev:

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Heart icon"><defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFE78A"/><stop offset=".52" stop-color="#F4B83F"/><stop offset="1" stop-color="#D98A22"/></linearGradient>
+    <linearGradient id="green" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#63C58A"/><stop offset="1" stop-color="#237A48"/></linearGradient>
+    <linearGradient id="coral" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FF9675"/><stop offset="1" stop-color="#D95D4F"/></linearGradient>
+    <linearGradient id="silver" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#F4F3E8"/><stop offset="1" stop-color="#C7D0C5"/></linearGradient>
+    <linearGradient id="wood" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#DFA45C"/><stop offset="1" stop-color="#A85B18"/></linearGradient>
+    </defs><g stroke-linecap="round" stroke-linejoin="round"><path d="M256 410 92 250C-8 143 116 49 201 125l55 53 55-53c85-76 209 18 109 125z" fill="url(#coral)" stroke="#A94136" stroke-width="13" stroke-linejoin="round"/><path d="M133 165c25-27 55-27 78-6" fill="none" stroke="#FFFDF7" stroke-width="16" stroke-linecap="round" opacity=".75"/></g></svg>
