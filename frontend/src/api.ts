@@ -1,4 +1,5 @@
 import { CONFIG } from "./config";
+import { generateUUID } from "./utils/uuid";
 export function csrfCookie() {
   return (
     document.cookie
@@ -82,7 +83,7 @@ export async function api<T>(
       path,
     )
   )
-    headers.set("X-Idempotency-Key", idempotencyKey || crypto.randomUUID());
+    headers.set("X-Idempotency-Key", idempotencyKey || generateUUID());
   if (options.body && !headers.has("Content-Type"))
     headers.set("Content-Type", "application/json");
   const requestOptions: RequestInit = {
@@ -156,7 +157,7 @@ export const getCsrf = () => api<{ csrfToken: string }>("/csrf/");
 export async function apiForm<T>(
   path: string,
   form: FormData,
-  idempotencyKey = crypto.randomUUID(),
+  idempotencyKey = generateUUID(),
   retried = false,
 ): Promise<T> {
   const headers = new Headers({

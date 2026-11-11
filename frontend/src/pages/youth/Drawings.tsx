@@ -14,6 +14,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { celebrateAward } from "../../components/AwardCelebration";
+import { generateUUID } from "../../utils/uuid";
 type Game = {
   id: number;
   title: string;
@@ -215,7 +216,7 @@ export function Drawings({ liveTick = 0 }: { liveTick?: number }) {
       strokes: strokes.current,
       preview: false,
     };
-    const idempotencyKey = crypto.randomUUID();
+    const idempotencyKey = generateUUID();
     setBusy(true);
     try {
       const r = await api<any>(

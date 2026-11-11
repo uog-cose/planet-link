@@ -12,6 +12,7 @@ import {
   RotateCcw,
   Send,
 } from "lucide-react";
+import { generateUUID } from "../../utils/uuid";
 
 type Game = {
   id: number;
@@ -162,7 +163,7 @@ export function BenchmarkGame() {
       result: payload,
       durationMs: Date.now() - attempt.startedAt,
     };
-    const idempotencyKey = crypto.randomUUID();
+    const idempotencyKey = generateUUID();
     setBusy(true);
     setError("");
     try {

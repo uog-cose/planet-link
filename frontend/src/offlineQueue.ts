@@ -1,4 +1,5 @@
 import { api } from "./api";
+import { generateUUID } from "./utils/uuid";
 
 type QueuedWrite = {
   id: string;
@@ -95,10 +96,10 @@ async function all(): Promise<QueuedWrite[]> {
 export async function queueWrite(
   path: string,
   body: unknown,
-  idempotencyKey = crypto.randomUUID(),
+  idempotencyKey = generateUUID(),
 ) {
   const record: QueuedWrite = {
-    id: crypto.randomUUID(),
+    id: generateUUID(),
     path,
     body: JSON.stringify(body),
     idempotencyKey,
