@@ -53,6 +53,8 @@ services:
         VITE_ENABLE_QUICK_LOGIN: "false"
         VITE_PUBLIC_APP_URL: https://${DOMAIN:?Set DOMAIN in .env.production}
     restart: unless-stopped
+    ports:
+      - "80:80"
     volumes:
       - youthquest_media:/var/www/media:ro
       - youthquest_static:/var/www/static:ro
