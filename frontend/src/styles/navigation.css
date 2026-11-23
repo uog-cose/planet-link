@@ -171,8 +171,7 @@
     border-radius: 12px
   }
 
-  .sidebar nav,
-  .sidebar-bottom {
+  .sidebar nav{
     gap: 3px
   }
 

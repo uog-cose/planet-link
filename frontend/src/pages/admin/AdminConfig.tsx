@@ -14,6 +14,7 @@ import {
   Eye,
   RefreshCw,
   Bell,
+  Users,
 } from "lucide-react";
 import { CalendarField } from "../../components/CalendarField";
 import { Toggle } from "../../components/Toggle";
@@ -62,6 +63,8 @@ export function AdminConfig() {
       milestones: Array.isArray(x.milestones) ? x.milestones : [],
       rewards: Array.isArray(x.rewards) ? x.rewards : [],
       streak_rules: Array.isArray(x.streak_rules) ? x.streak_rules : [],
+      login_reward_config: x.login_reward_config || { enabled: true, daily_xp: 10, timezone: 'Europe/London', milestones: [{days:2,bonus_xp:20},{days:3,bonus_xp:30},{days:5,bonus_xp:75},{days:7,bonus_xp:150}] },
+      group_scoring_config: x.group_scoring_config || { minimum_group_size: 2, ranking_periods: ['weekly', 'monthly', 'overall'] },
       public_config: x.public_config || {},
     });
     setDate(x.starts || "");
@@ -88,6 +91,8 @@ export function AdminConfig() {
           max_worker_points: Number(p.max_worker_points || 100),
           attendance_points: Number(p.attendance_points || 0),
           streak_rules: p.streak_rules || [],
+          login_reward_config: p.login_reward_config || {},
+          group_scoring_config: p.group_scoring_config || { minimum_group_size: 2, ranking_periods: ['weekly', 'monthly', 'overall'] },
           attendance_attention_days: Number(p.attendance_attention_days || 7),
           points_attention_days: Number(p.points_attention_days || 7),
           attention_grace_days: Number(p.attention_grace_days || 3),
@@ -110,6 +115,8 @@ export function AdminConfig() {
           ...x,
           milestones: x.milestones || [],
           streak_rules: x.streak_rules || [],
+          login_reward_config: x.login_reward_config || p.login_reward_config,
+          group_scoring_config: x.group_scoring_config || p.group_scoring_config,
           public_config: x.public_config || {},
         });
       initialSnapshot.current = JSON.stringify({ ...x, starts: date || "" });
@@ -368,7 +375,7 @@ export function AdminConfig() {
             />
           </label>
           <label>
-            {t("attendancePoints")}
+            QR onsite attendance base XP
             <input
               type="number"
               min="0"
@@ -469,8 +476,8 @@ export function AdminConfig() {
               ? ""
               : "config-search-hidden"
           }
-          title={t("attendanceStreakRewards")}
-          description={t("attendanceStreakHelp")}
+          title="QR onsite attendance rewards"
+          description="A youth worker displays a short-lived QR code at an onsite event. One successful scan per young person per programme-local day earns base XP multiplied by the consecutive check-in streak."
           summary={`${p.streak_rules.length} ${t("rules").toLowerCase()}`}
           icon={Flame}
         >
@@ -537,6 +544,63 @@ export function AdminConfig() {
               <span>{t("baseAttendanceStillApplies")}</span>
             </div>
           )}
+          <div className="config-save-row">
+            <Button icon={Save} onClick={() => setConfirm({ kind: "save" })}>
+              {t("saveChanges")}
+            </Button>
+          </div>
+        </CollapsibleCard>
+
+        <CollapsibleCard
+          className={matchesConfig("daily login streak rewards") ? "" : "config-search-hidden"}
+          title="Daily login rewards"
+          description="Reward young people for signing in on consecutive programme-local days."
+          summary={`${p.login_reward_config?.daily_xp ?? 10} XP daily · ${(p.login_reward_config?.milestones || []).length} milestones`}
+          icon={Flame}
+        >
+          <Toggle
+            checked={p.login_reward_config?.enabled !== false}
+            onChange={(enabled) => setP({...p, login_reward_config: {...p.login_reward_config, enabled}})}
+            label="Enable daily login rewards"
+            description="Only successful young-person logins count. Refreshing a session does not count."
+          />
+          <div className="milestone-editor">
+            <label>Daily login XP<input type="number" min="0" max="5000" value={p.login_reward_config?.daily_xp ?? 10} onChange={(e) => setP({...p, login_reward_config: {...p.login_reward_config, daily_xp: Number(e.target.value)}})} /></label>
+            <label>Timezone<input value={p.login_reward_config?.timezone || "Europe/London"} onChange={(e) => setP({...p, login_reward_config: {...p.login_reward_config, timezone: e.target.value}})} placeholder="Europe/London" /></label>
+          </div>
+          <div className="section-head"><div><h3>Streak milestone bonuses</h3><p className="muted">Additional XP is awarded once when each threshold is reached in a streak cycle.</p></div><Button variant="secondary" icon={Plus} onClick={() => { const rules=p.login_reward_config?.milestones || []; const last=rules.at(-1); setP({...p, login_reward_config:{...p.login_reward_config, milestones:[...rules,{days:last ? Number(last.days)+1 : 2, bonus_xp:25}]}}); }}>Add milestone</Button></div>
+          {(p.login_reward_config?.milestones || []).map((rule: any, i: number) => <div className="milestone-editor" key={`login-${i}`}>
+            <label>Consecutive days<input type="number" min="1" max="365" value={rule.days} onChange={(e) => setP({...p, login_reward_config:{...p.login_reward_config, milestones:p.login_reward_config.milestones.map((x:any,j:number)=>j===i?{...x,days:Number(e.target.value)}:x)}})} /></label>
+            <label>Bonus XP<input type="number" min="0" max="50000" value={rule.bonus_xp} onChange={(e) => setP({...p, login_reward_config:{...p.login_reward_config, milestones:p.login_reward_config.milestones.map((x:any,j:number)=>j===i?{...x,bonus_xp:Number(e.target.value)}:x)}})} /></label>
+            <Button variant="ghost" icon={Trash2} aria-label="Remove login milestone" onClick={() => setP({...p, login_reward_config:{...p.login_reward_config, milestones:p.login_reward_config.milestones.filter((_:any,j:number)=>j!==i)}})} />
+          </div>)}
+          <div className="config-save-row"><Button icon={Save} onClick={() => setConfirm({kind:"save"})}>{t("saveChanges")}</Button></div>
+        </CollapsibleCard>
+
+        <CollapsibleCard
+          className={matchesConfig("group scoring fairness leaderboard") ? "" : "config-search-hidden"}
+          title="Group scoring fairness"
+          description="Groups keep their collective XP total, while competitive ranking uses average XP per eligible member so larger groups do not win simply because they have more people."
+          summary={`Minimum ${p.group_scoring_config?.minimum_group_size ?? 2} eligible members`}
+          icon={Users}
+        >
+          <label>
+            Minimum eligible members to appear in the group leaderboard
+            <input
+              type="number"
+              min="1"
+              max="100"
+              value={p.group_scoring_config?.minimum_group_size ?? 2}
+              onChange={(e) => setP({
+                ...p,
+                group_scoring_config: {
+                  ...p.group_scoring_config,
+                  minimum_group_size: Math.max(1, Math.min(100, Number(e.target.value) || 1)),
+                },
+              })}
+            />
+          </label>
+          <p className="muted">Youth workers can choose for each group whether inactive accounts count towards its average. Departed or transferred members are excluded from future scoring, while XP already earned for the original group remains there.</p>
           <div className="config-save-row">
             <Button icon={Save} onClick={() => setConfirm({ kind: "save" })}>
               {t("saveChanges")}

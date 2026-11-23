@@ -428,6 +428,7 @@ export function MapEvent() {
               onChange={(x) => setE({ ...e, description: x.target.value })}
             />
           </label>
+          <p className="span-2 muted">Map Events are used for scheduling and showing upcoming activities. Onsite attendance and XP are recorded separately through the youth worker QR check-in.</p>
           <CalendarField
             label="Starts"
             value={e.startAt || "NOW"}
@@ -647,6 +648,7 @@ export function MapEvent() {
                     <Button variant="secondary" onClick={() => edit(x)}>
                       Edit
                     </Button>
+                    {x.status !== "ended" && x.status !== "cancelled" && <Button variant="ghost" onClick={async () => { if (!window.confirm(`Cancel ${x.title}? This event will no longer appear as an active scheduled activity.`)) return; try { await api("/map-event/", {method:"PATCH", body:JSON.stringify({action:"cancel",id:x.id})}); await load(); } catch(err) { setError((err as Error).message); } }}>Cancel event</Button>}
                     {x.status === "current" && (
                       <Button
                         variant="secondary"

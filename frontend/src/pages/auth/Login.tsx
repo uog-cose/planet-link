@@ -1,3 +1,4 @@
+
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { api, getCsrf, setClientAuthenticated } from "../../api";
@@ -165,15 +166,15 @@ export function Login({ onLogin }: { onLogin: (u: User) => void }) {
               <Link to="/cookies">{t("cookies")}</Link>
               <Link to="/help">{t("help")}</Link>
             </div>
-            {import.meta.env.DEV &&
-              CONFIG.env === "local" &&
-              CONFIG.quickLogin && (
-                <DevQuickLogin
-                  onLogin={onLogin}
-                  navigate={nav}
-                  returnTo={returnTo}
-                />
-              )}
+
+            {/* Local development quick login */}
+            {CONFIG.env === "local" && CONFIG.quickLogin && (
+              <DevQuickLogin
+                onLogin={onLogin}
+                navigate={nav}
+                returnTo={returnTo}
+              />
+            )}
           </form>
         </div>
       </section>

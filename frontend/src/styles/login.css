@@ -92,7 +92,7 @@
     display: grid;
     place-items: center;
     padding: clamp(18px, 3vw, 44px);
-    background: var(--q-paper) var(--theme-bg-image, url('/quest-media/graphics/youth-dashboard-bg.png')) center/cover no-repeat
+    background: var(--q-paper) var(--theme-bg-image, url("/quest-media/graphics/youth-dashboard-bg.png")) center/cover no-repeat
 }
 
 .login-page .login-card {

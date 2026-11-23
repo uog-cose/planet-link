@@ -9,7 +9,7 @@
   content: "";
   position: fixed;
   inset: 0;
-  background: var(--theme-bg-image, url('/quest-media/graphics/app-landscape-bg.png')) center/cover no-repeat;
+  background: var(--theme-bg-image, url("/quest-media/graphics/app-landscape-bg.png")) center/cover no-repeat;
   opacity: .18;
   pointer-events: none;
   z-index: -2
@@ -187,7 +187,7 @@
 }
 
 .public-display-v3::before {
-  background: var(--theme-bg-image, url('/quest-media/graphics/app-landscape-bg.png')) center/cover no-repeat;
+  background: var(--theme-bg-image, url("/quest-media/graphics/app-landscape-bg.png")) center/cover no-repeat;
   opacity: .13
 }
 
@@ -215,8 +215,7 @@
 
 .public-v3-hero p,
 .public-v3-header small,
-.public-v3-footer,
-.public-riser-v3 small {
+.public-v3-footer{
   color: var(--muted)
 }
 
@@ -245,9 +244,7 @@ option {
   color: var(--text)
 }
 
-.table tbody tr:hover td {
-  background: color-mix(in srgb, var(--tile1) 38%, transparent)
-}
+
 
 /* Avoid blank scroll range when a screen has less content than the viewport. */
 .main {
@@ -255,8 +252,7 @@ option {
   overflow-x: clip
 }
 
-.page,
-.youth-home-senior {
+.page{
   min-height: 0
 }
 
@@ -313,31 +309,18 @@ body {
   color: var(--text)
 }
 
-.card,
-.quest-welcome,
-.quest-next-card,
-.quest-progress-card,
-.quest-activity-card,
-.quest-event-card {
+.card{
   background: color-mix(in srgb, var(--surface) 94%, transparent)
 }
 
 /* Youth home uses the prototype's four quiet accent surfaces. */
-.youth-home-senior .quest-next-card {
-  background: linear-gradient(145deg, color-mix(in srgb, var(--tile1) 72%, var(--surface)), var(--surface))
-}
 
-.youth-home-senior .quest-progress-card {
-  background: linear-gradient(145deg, color-mix(in srgb, var(--tile2) 74%, var(--surface)), var(--surface))
-}
 
-.youth-home-senior .quest-activity-card {
-  background: linear-gradient(145deg, color-mix(in srgb, var(--tile3) 66%, var(--surface)), var(--surface))
-}
 
-.youth-home-senior .quest-event-card {
-  background: linear-gradient(145deg, color-mix(in srgb, var(--tile4) 68%, var(--surface)), var(--surface))
-}
+
+
+
+
 
 /* Admin dashboard gets restrained but visible theme accents. */
 .role-admin .stats-metric-1,
@@ -490,45 +473,25 @@ body {
 
 /* v84.3 visual refinement */
 /* Let the landscape actually participate in the youth home instead of being painted over by --bg. */
-.youth-dashboard-senior {
-  background: transparent;
-  isolation: isolate
-}
 
-.youth-dashboard-senior::before {
-  z-index: 0;
-  opacity: var(--theme-bg-opacity, .16);
-  background: var(--theme-bg-image, url('/quest-media/graphics/youth-dashboard-bg.png')) center/cover no-repeat
-}
 
-.youth-dashboard-senior>.youth-home-senior {
-  position: relative;
-  z-index: 1
-}
 
-.youth-dashboard-senior .card,
-.youth-dashboard-senior .quest-welcome,
-.youth-dashboard-senior .quest-next-card,
-.youth-dashboard-senior .quest-progress-card,
-.youth-dashboard-senior .quest-activity-card,
-.youth-dashboard-senior .quest-event-card {
+
+
+
+.youth-dashboard-senior .card{
   background-color: color-mix(in srgb, var(--surface) 84%, transparent);
   backdrop-filter: blur(10px);
 }
 
 /* Progress is the primary dashboard object. Keep it visually larger, while trimming empty padding. */
-.quest-focus-grid {
-  grid-template-columns: minmax(0, 1.3fr) minmax(280px, .7fr);
-  gap: 12px
-}
+
 
 .quest-focus-grid>.card {
   padding: 17px 19px
 }
 
-.quest-progress-highlight {
-  min-height: 0
-}
+
 
 .quest-progress-highlight .xp-progress-compact {
   grid-template-columns: 180px minmax(0, 1fr);
@@ -541,27 +504,16 @@ body {
   height: 170px
 }
 
-.quest-progress-highlight .progress-foot {
-  margin-top: 9px
-}
 
-.quest-next-card p {
-  margin: 7px 0 0
-}
 
-.quest-welcome {
-  min-height: 270px;
-  padding: 23px 25px
-}
 
-.quest-welcome-art {
-  height: 270px
-}
+
+
+
+
 
 @media(max-width:1000px) {
-  .quest-focus-grid {
-    grid-template-columns: 1fr
-  }
+  
 
   .quest-progress-highlight .xp-progress-compact {
     grid-template-columns: 150px minmax(0, 1fr)
@@ -575,19 +527,11 @@ body {
 }
 
 @media(max-width:760px) {
-  .youth-dashboard-senior::before {
-    inset: 62px 0 70px 0;
-    opacity: .18
-  }
+  
 
-  .quest-welcome {
-    min-height: 0;
-    padding: 18px 17px 0
-  }
+  
 
-  .quest-welcome-art {
-    height: 195px
-  }
+  
 
   .quest-focus-grid>.card {
     padding: 15px
@@ -917,7 +861,7 @@ body {
 }
 
 .app-shell::before {
-  background: var(--theme-bg-image, url('/quest-media/graphics/app-landscape-bg.png')) center/cover no-repeat;
+  background: var(--theme-bg-image, url("/quest-media/graphics/app-landscape-bg.png")) center/cover no-repeat;
   opacity: .22
 }
 
@@ -938,35 +882,23 @@ body {
 .card,
 .control-surface-card,
 .instance-management-row,
-.account-row,
 .public-points-queue,
 .points-action-grid>.card {
   background: color-mix(in srgb, var(--surface) 82%, transparent);
   backdrop-filter: blur(10px)
 }
 
-.youth-dashboard-senior::before {
-  background: var(--theme-bg-image, url('/quest-media/graphics/youth-dashboard-bg.png')) center/cover no-repeat;
-  opacity: var(--theme-bg-opacity, .16);
-  z-index: 0
-}
+
 
 .youth-home-senior .card {
   padding: 17px
 }
 
-.quest-welcome {
-  padding: 20px 22px;
-  min-height: 250px
-}
 
-.quest-welcome-art {
-  height: 245px
-}
 
-.quest-focus-grid {
-  gap: 10px
-}
+
+
+
 
 .quest-progress-highlight .xp-progress-compact {
   grid-template-columns: 155px minmax(0, 1fr)
@@ -1004,39 +936,17 @@ body {
   gap: 10px
 }
 
-.account-row {
-  display: grid;
-  grid-template-columns: minmax(150px, 1fr) 100px 150px minmax(180px, auto);
-  align-items: center;
-  gap: 12px;
-  padding: 13px 14px;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--surface) 78%, transparent)
-}
 
-.account-row>div:first-child {
-  min-width: 0
-}
 
-.account-row>div:first-child strong,
-.account-row>div:first-child span {
-  display: block
-}
 
-.account-row>div:first-child strong {
-  font-size: 13px
-}
 
-.account-row>div:first-child span {
-  font-size: 10px;
-  color: var(--muted);
-  margin-top: 2px
-}
 
-.account-row select {
-  min-height: 38px
-}
+
+
+
+
+
+
 
 .account-actions {
   display: flex;
@@ -1106,8 +1016,7 @@ body {
   padding: 14px
 }
 
-.public-points-empty,
-.pending-empty {
+.public-points-empty{
   display: grid;
   place-items: center;
   text-align: center;
@@ -1118,8 +1027,7 @@ body {
   background: color-mix(in srgb, var(--surface2) 48%, transparent)
 }
 
-.public-points-empty svg,
-.pending-empty svg {
+.public-points-empty svg{
   color: var(--accent)
 }
 
@@ -1201,15 +1109,9 @@ body {
     display: none
   }
 
-  .youth-dashboard-senior::before {
-    inset: 62px 0 74px 0;
-    opacity: .22
-  }
+  
 
-  .account-row {
-    grid-template-columns: 1fr;
-    align-items: start
-  }
+  
 
   .account-actions {
     justify-content: flex-start
@@ -1370,8 +1272,7 @@ body {
 
 .worker-dashboard-page,
 .admin-dashboard-page,
-.programme-instances-page,
-.admin-people-groups {
+.programme-instances-page{
   display: grid;
   gap: 14px
 }
@@ -2101,15 +2002,15 @@ body {
   animation: yq-pop-in .35s var(--q-ease) both
 }
 
-.yq-attendance-dots i:nth-child(4n+1) {
+.yq-attendance-dots i:nth-child(4n/**/+1) {
   background: var(--tile1)
 }
 
-.yq-attendance-dots i:nth-child(4n+2) {
+.yq-attendance-dots i:nth-child(4n/**/+2) {
   background: var(--tile2)
 }
 
-.yq-attendance-dots i:nth-child(4n+3) {
+.yq-attendance-dots i:nth-child(4n/**/+3) {
   background: var(--tile3)
 }
 
@@ -2157,21 +2058,13 @@ body {
   color: var(--color-fff)
 }
 
-.orb-0 {
-  background: var(--accent)
-}
 
-.orb-1 {
-  background: var(--accent2)
-}
 
-.orb-2 {
-  background: var(--q-orange)
-}
 
-.orb-3 {
-  background: var(--warm)
-}
+
+
+
+
 
 .yq-skill-track {
   height: 7px;
@@ -2380,183 +2273,55 @@ body {
   min-width: 0
 }
 
-.public-group-race-list {
-  display: grid;
-  gap: 8px;
-  margin-top: 12px
-}
 
-.public-group-race-row {
-  display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) auto;
-  gap: 9px;
-  align-items: center;
-  padding: 9px;
-  border: 1px solid var(--border);
-  border-radius: 15px;
-  background: var(--surface2);
-  animation: yq-pop-in .4s var(--q-ease) both
-}
 
-.public-group-race-row:nth-child(4n+1) {
-  background: color-mix(in srgb, var(--tile1) 55%, var(--surface))
-}
 
-.public-group-race-row:nth-child(4n+2) {
-  background: color-mix(in srgb, var(--tile2) 55%, var(--surface))
-}
 
-.public-group-race-row:nth-child(4n+3) {
-  background: color-mix(in srgb, var(--tile3) 55%, var(--surface))
-}
 
-.public-group-race-row:nth-child(4n) {
-  background: color-mix(in srgb, var(--tile4) 55%, var(--surface))
-}
 
-.public-group-race-rank {
-  width: 30px;
-  height: 30px;
-  border-radius: 10px;
-  display: grid;
-  place-items: center;
-  background: var(--surface);
-  font-weight: 950;
-  font-size: 11px
-}
 
-.public-group-race-main {
-  min-width: 0;
-  display: grid;
-  gap: 5px
-}
 
-.public-group-race-main>div:first-child {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px
-}
 
-.public-group-race-main strong {
-  font-size: 12px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap
-}
 
-.public-group-race-main span {
-  font-size: 9px;
-  color: var(--muted);
-  white-space: nowrap
-}
 
-.public-race-track {
-  height: 8px;
-  border-radius: 999px;
-  background: var(--donut-track);
-  overflow: hidden
-}
 
-.public-race-track i {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, var(--accent2), var(--q-orange));
-  animation: yq-grow .9s var(--q-ease)
-}
 
-.public-group-race-row>b {
-  font-size: 12px
-}
 
-.public-group-metrics {
-  display: flex;
-  gap: 9px;
-  flex-wrap: wrap
-}
 
-.public-group-metrics span {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 8px;
-  color: var(--muted)
-}
 
-.public-group-metrics svg {
-  color: var(--accent)
-}
 
-.public-high-riser-chart {
-  height: 245px;
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 10px;
-  align-items: end;
-  padding-top: 20px
-}
 
-.public-high-riser-col {
-  height: 100%;
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) auto auto auto;
-  gap: 4px;
-  min-width: 0;
-  text-align: center;
-  align-items: end
-}
 
-.public-high-riser-bar-wrap {
-  height: 100%;
-  display: flex;
-  align-items: end;
-  justify-content: center
-}
 
-.public-high-riser-bar-wrap i {
-  display: block;
-  width: min(42px, 70%);
-  min-height: 10px;
-  border-radius: 12px 12px 5px 5px;
-  background: linear-gradient(180deg, var(--accent2), var(--accent));
-  position: relative;
-  animation: yq-grow-height .8s var(--q-ease) both;
-  transform-origin: bottom
-}
 
-.public-high-riser-bar-wrap i span {
-  position: absolute;
-  top: -18px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 8px;
-  font-weight: 950;
-  white-space: nowrap
-}
 
-.public-high-riser-rank {
-  width: 23px;
-  height: 23px;
-  border-radius: 8px;
-  background: var(--tile2);
-  display: grid;
-  place-items: center;
-  font-size: 9px;
-  font-weight: 950;
-  justify-self: center
-}
 
-.public-high-riser-col strong {
-  font-size: 9px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap
-}
 
-.public-high-riser-col small {
-  font-size: 8px;
-  color: var(--muted)
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 @keyframes yq-grow-height {
   from {
@@ -2565,23 +2330,13 @@ body {
 }
 
 @media(max-width:760px) {
-  .public-group-race-row {
-    grid-template-columns: 28px minmax(0, 1fr) auto
-  }
+  
 
-  .public-group-race-main>div:first-child {
-    display: grid;
-    gap: 2px
-  }
+  
 
-  .public-high-riser-chart {
-    height: 205px;
-    gap: 5px
-  }
+  
 
-  .public-high-riser-bar-wrap i {
-    width: min(32px, 75%)
-  }
+  
 }
 
 /* v84.5.35 — UX polish: one visual language, stronger hierarchy, playful but restrained motion. */
@@ -2713,36 +2468,15 @@ body {
 }
 
 /* Youth dashboard: stronger hero hierarchy and clearer next-action storytelling. */
-.youth-home-senior .quest-welcome {
-  position: relative;
-  overflow: hidden;
-  border-radius: var(--yq-radius-lg);
-  box-shadow: 0 18px 52px var(--color-rgba-23-59-50-12)
-}
 
-.youth-home-senior .quest-welcome:after {
-  content: 'XP • PLAY • GROW';
-  position: absolute;
-  right: 22px;
-  top: 18px;
-  font-size: 8px;
-  font-weight: 950;
-  letter-spacing: .16em;
-  color: color-mix(in srgb, var(--accent) 62%, var(--muted));
-  opacity: .8
-}
 
-.youth-home-senior .quest-welcome h2 {
-  max-width: 680px
-}
 
-.youth-home-senior .quest-progress-card {
-  border-color: color-mix(in srgb, var(--q-orange) 20%, var(--border))
-}
 
-.youth-home-senior .quest-next-card {
-  border-color: color-mix(in srgb, var(--accent) 20%, var(--border))
-}
+
+
+
+
+
 
 .youth-home-senior .section-head h2 {
   letter-spacing: -.035em
@@ -2777,7 +2511,7 @@ body {
 }
 
 .yq-milestone-chip.done:after {
-  content: '✓';
+  content: "✓";
   position: absolute;
   right: 7px;
   top: 5px;
@@ -2794,7 +2528,7 @@ body {
 }
 
 .yq-attendance-card:after {
-  content: '';
+  content: "";
   position: absolute;
   width: 120px;
   height: 120px;
@@ -2815,15 +2549,15 @@ body {
   z-index: 2
 }
 
-.yq-attendance-dots i.present:nth-child(4n+1) {
+.yq-attendance-dots i.present:nth-child(4n/**/+1) {
   background: var(--accent2)
 }
 
-.yq-attendance-dots i.present:nth-child(4n+2) {
+.yq-attendance-dots i.present:nth-child(4n/**/+2) {
   background: var(--q-orange)
 }
 
-.yq-attendance-dots i.present:nth-child(4n+3) {
+.yq-attendance-dots i.present:nth-child(4n/**/+3) {
   background: var(--warm)
 }
 
@@ -2902,93 +2636,49 @@ body {
   box-shadow: 0 20px 58px var(--color-rgba-23-59-50-10) !important
 }
 
-.public-group-race-row {
-  position: relative;
-  overflow: hidden;
-  transition: transform .2s ease, box-shadow .2s ease
-}
 
-.public-group-race-row:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 26px var(--color-rgba-23-59-50-10)
-}
 
-.public-group-race-rank {
-  box-shadow: 0 4px 12px var(--color-rgba-23-59-50-08)
-}
 
-.public-group-race-row:nth-child(1) .public-group-race-rank {
-  background: var(--q-orange);
-  color: var(--color-fff)
-}
 
-.public-group-race-row:nth-child(2) .public-group-race-rank {
-  background: var(--tile2)
-}
 
-.public-group-race-row:nth-child(3) .public-group-race-rank {
-  background: var(--tile3)
-}
 
-.public-group-mini-bars {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(40px, 1fr));
-  gap: 5px;
-  margin-top: 1px
-}
 
-.public-group-mini-bars i {
-  display: block;
-  height: 4px;
-  border-radius: 999px;
-  background: var(--surface2);
-  overflow: hidden
-}
 
-.public-group-mini-bars i:nth-child(1) em {
-  background: var(--accent2)
-}
 
-.public-group-mini-bars i:nth-child(2) em {
-  background: var(--q-orange)
-}
 
-.public-group-mini-bars i:nth-child(3) em {
-  background: var(--accent)
-}
 
-.public-group-mini-bars em {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  animation: yq-grow .7s var(--q-ease) both
-}
 
-.public-high-riser-col {
-  transition: transform .2s ease
-}
 
-.public-high-riser-col:hover {
-  transform: translateY(-4px)
-}
 
-.public-high-riser-bar-wrap i {
-  box-shadow: 0 10px 22px color-mix(in srgb, var(--accent) 15%, transparent)
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 .public-v3-footer {
   opacity: .8
 }
 
 /* Empty states are friendly and actionable instead of looking like errors. */
-.empty-card,
+
 .account-search-empty,
 .worker-empty,
 .notification-panel-empty {
   border-radius: var(--yq-radius-md)
 }
 
-.empty-card strong,
+
 .worker-empty strong {
   letter-spacing: -.02em
 }
@@ -3007,15 +2697,9 @@ body {
 }
 
 @media(max-width:760px) {
-  .youth-home-senior .quest-welcome:after {
-    right: 14px;
-    top: 13px;
-    font-size: 7px
-  }
+  
 
-  .youth-home-senior .quest-welcome {
-    box-shadow: 0 12px 34px var(--color-rgba-23-59-50-10)
-  }
+  
 
   .public-v3-header {
     padding: 6px 8px
@@ -3027,9 +2711,7 @@ body {
     border-radius: 11px
   }
 
-  .public-group-mini-bars {
-    grid-template-columns: repeat(3, minmax(30px, 1fr))
-  }
+  
 }
 
 
@@ -3039,11 +2721,11 @@ body {
 }
 
 .public-display-v3:before {
-  content: '' !important;
+  content: "" !important;
   display: block !important;
   position: absolute !important;
   inset: 0 !important;
-  background: var(--theme-bg-image, url('/quest-media/graphics/app-landscape-bg.png')) center/cover no-repeat !important;
+  background: var(--theme-bg-image, url("/quest-media/graphics/app-landscape-bg.png")) center/cover no-repeat !important;
   opacity: .18 !important;
   pointer-events: none !important;
   z-index: 0 !important
@@ -3254,17 +2936,11 @@ body {
 }
 
 /* v84.5.36: chart fills remain flat/solid even where legacy chart classes are still present. */
-.public-race-track i {
-  background: var(--accent2) !important
-}
 
-.public-high-riser-bar-wrap i {
-  background: var(--accent) !important
-}
 
-.stat-wave i {
-  background: var(--accent) !important
-}
+
+
+
 
 .people-groups-switcher button {
   font-size: 12px
@@ -3550,9 +3226,9 @@ textarea:focus-visible {
     display: none
   }
 
-  .sidebar-nav-main>a:nth-child(n+5),
-  .role-admin .sidebar-nav-main>a:nth-child(n+5),
-  .role-worker .sidebar-nav-main>a:nth-child(n+5) {
+  .sidebar-nav-main>a:nth-child(n/**/+5),
+  .role-admin .sidebar-nav-main>a:nth-child(n/**/+5),
+  .role-worker .sidebar-nav-main>a:nth-child(n/**/+5) {
     display: none !important
   }
 
@@ -3650,46 +3326,17 @@ textarea:focus-visible {
 }
 
 /* Forms read as short steps rather than a wall of fields. */
-.form-section {
-  display: grid;
-  gap: 12px;
-  padding: 16px 0;
-  border-top: 1px solid var(--border)
-}
 
-.form-section:first-child {
-  border-top: 0;
-  padding-top: 0
-}
 
-.form-section-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px
-}
 
-.form-section-title h3 {
-  margin: 0;
-  font-size: 14px
-}
 
-.form-section-title p {
-  margin: 3px 0 0;
-  font-size: 10px;
-  color: var(--muted)
-}
 
-.form-actions-sticky {
-  position: sticky;
-  bottom: 10px;
-  z-index: 8;
-  padding: 10px;
-  border: 1px solid var(--border);
-  border-radius: 15px;
-  background: var(--surface);
-  box-shadow: 0 14px 36px var(--color-rgba-0-0-0-12)
-}
+
+
+
+
+
+
 
 /* Friendly feedback and action states. */
 .toast-stack {
@@ -3709,7 +3356,6 @@ textarea:focus-visible {
 }
 
 .loading-skeleton,
-.skeleton,
 .notification-skeleton-card>span,
 .notification-skeleton-card>div span {
   background: var(--surface2) !important;
@@ -3736,7 +3382,6 @@ textarea:focus-visible {
 .yq-progress-meter i,
 .yq-group-track i,
 .yq-skill-track i,
-.public-race-track i,
 .public-score-track i,
 .public-attendance-meter i {
   background: var(--accent) !important
@@ -3815,29 +3460,17 @@ textarea:focus-visible {
 .worker-attendance-card,
 .worker-attention-card,
 .worker-alert-banner,
-.worker-event-card-new,
-.worker-next-actions,
 .admin-command-hero,
 .admin-attention-panel,
 .admin-followup-card,
 .admin-event-card-new,
-.admin-config-panel,
-.quest-welcome,
-.quest-next-card,
-.quest-progress-card,
-.quest-activity-card,
-.quest-event-card,
-.next-challenge-card,
-.records-card,
 .reward-banner,
-.dashboard-event-card,
 .public-v3-hero,
 .points-action-grid>.card:nth-child(1),
 .points-action-grid>.card:nth-child(2),
 .points-page .public-points-queue,
 .programme-instances-page .instance-create-card,
-.reset-qr,
-.public-group-race-row {
+.reset-qr{
   background: var(--surface) !important
 }
 
@@ -3951,11 +3584,7 @@ textarea:focus-visible {
     justify-content: center
   }
 
-  .quest-welcome-actions {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 8px
-  }
+  
 
   .quest-welcome-actions .button {
     width: 100%;
@@ -3965,117 +3594,40 @@ textarea:focus-visible {
 
 
 /* v84.5.48: active theme artwork is visible after authentication, not only on login/theme previews. */
-.youth-dashboard-senior {
-  background: color-mix(in srgb, var(--bg) 92%, var(--surface));
-}
 
-.youth-dashboard-senior::before {
-  inset: 78px 0 0 248px;
-  background-image: linear-gradient(180deg, color-mix(in srgb, var(--bg) 35%, transparent), color-mix(in srgb, var(--bg) 62%, transparent)), var(--theme-bg-image, url('/quest-media/graphics/youth-dashboard-bg.png'));
-  background-position: center top;
-  background-size: cover;
-  opacity: .32;
-  filter: saturate(.92);
-}
 
-.youth-home-senior .quest-welcome {
-  isolation: isolate;
-  background: linear-gradient(105deg, var(--surface) 0%, color-mix(in srgb, var(--surface) 94%, transparent) 52%, color-mix(in srgb, var(--tile1) 65%, var(--surface)) 100%) !important;
-}
 
-.youth-home-senior .quest-welcome::before {
-  content: '';
-  position: absolute;
-  z-index: 0;
-  inset: 0 0 0 35%;
-  pointer-events: none;
-  background-image: linear-gradient(90deg, var(--surface) 0%, color-mix(in srgb, var(--surface) 78%, transparent) 33%, color-mix(in srgb, var(--surface) 25%, transparent) 100%), var(--theme-banner-image, none);
-  background-position: center right;
-  background-size: cover;
-  background-repeat: no-repeat;
-  opacity: .8;
-  mask-image: linear-gradient(90deg, transparent 0%, #000 28%);
-}
 
-.youth-home-senior .quest-welcome-copy,
-.youth-home-senior .quest-welcome-art {
-  z-index: 1
-}
 
-.youth-home-senior .quest-welcome-art {
-  border-radius: 22px
-}
 
-.youth-home-senior .quest-welcome-art::after {
-  content: '';
-  position: absolute;
-  right: 7%;
-  top: 8%;
-  width: 58px;
-  height: 58px;
-  border: 2px solid color-mix(in srgb, var(--accent) 28%, transparent);
-  border-radius: 50%;
-  box-shadow: 0 0 0 12px color-mix(in srgb, var(--warm) 12%, transparent), 0 0 0 25px color-mix(in srgb, var(--accent) 8%, transparent);
-  pointer-events: none;
-}
+
+
+
+
+
+
+
 
 @media(max-width:760px) {
-  .youth-dashboard-senior::before {
-    inset: 64px 0 74px 0;
-    opacity: .24;
-    background-position: center top
-  }
+  
 
-  .youth-home-senior .quest-welcome::before {
-    inset: 38% 0 0 0;
-    background-position: center;
-    background-image: linear-gradient(180deg, var(--surface) 0%, color-mix(in srgb, var(--surface) 35%, transparent) 100%), var(--theme-banner-image, none);
-    mask-image: linear-gradient(180deg, transparent 0%, #000 25%)
-  }
+  
 
-  .youth-home-senior .quest-welcome-art::after {
-    width: 38px;
-    height: 38px;
-    right: 10%;
-    top: 6%
-  }
+  
 }
 
 
 /* v84.5.49: guarantee live theme switching updates the authenticated youth dashboard artwork. */
-.youth-dashboard-senior[data-active-theme]::before {
-  content: "";
-  position: fixed;
-  inset: 78px 0 0 248px;
-  z-index: 0;
-  pointer-events: none;
-  background-image: linear-gradient(180deg, color-mix(in srgb, var(--bg) 24%, transparent), color-mix(in srgb, var(--bg) 48%, transparent)), var(--theme-bg-image, url('/quest-media/graphics/youth-dashboard-bg.png'));
-  background-position: center top;
-  background-size: cover;
-  background-repeat: no-repeat;
-  opacity: var(--theme-bg-opacity, .22);
-  transition: opacity .2s ease, background-image .2s ease;
-}
 
-.youth-dashboard-senior[data-active-theme]>.youth-home-senior {
-  position: relative;
-  z-index: 1
-}
 
-.youth-home-senior .quest-welcome::before {
-  transition: background-image .2s ease, opacity .2s ease
-}
 
-.quest-welcome-art img {
-  max-width: 100%;
-  object-fit: contain
-}
+
+
+
+
 
 @media(max-width:760px) {
-  .youth-dashboard-senior[data-active-theme]::before {
-    inset: 64px 0 74px 0;
-    opacity: .20
-  }
+  
 }
 
 /* v84.5.51: one shared live theme surface for every authenticated role and login. */
@@ -4158,27 +3710,11 @@ textarea:focus-visible {
 
 
 /* Youth Quest dashboard refresh — child-first hierarchy, readable touch targets and responsive quest cards. */
-.youth-dashboard-senior .youth-home-senior {
-  max-width: 1440px;
-  margin-inline: auto;
-  padding: clamp(12px, 2.2vw, 28px)
-}
 
-.youth-dashboard-senior .quest-welcome {
-  position: relative;
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
-  border-radius: 28px;
-  box-shadow: 0 14px 36px color-mix(in srgb, var(--text) 8%, transparent);
-  min-height: unset;
-  padding: clamp(20px, 3vw, 34px);
-  gap: 20px
-}
 
-.youth-dashboard-senior .quest-welcome-copy {
-  max-width: 660px;
-  z-index: 1
-}
+
+
+
 
 .youth-dashboard-senior .quest-welcome .eyebrow,
 .youth-dashboard-senior .section-head .eyebrow {
@@ -4187,39 +3723,17 @@ textarea:focus-visible {
   font-weight: 900
 }
 
-.youth-dashboard-senior .quest-welcome h2 {
-  font-size: clamp(28px, 3.2vw, 42px);
-  line-height: 1.08;
-  letter-spacing: -.035em;
-  margin: 8px 0 10px;
-  max-width: 14ch
-}
 
-.youth-dashboard-senior .quest-welcome p {
-  font-size: clamp(14px, 1.2vw, 17px);
-  line-height: 1.55;
-  max-width: 48ch
-}
 
-.youth-dashboard-senior .quest-welcome-art {
-  min-width: 140px;
-  max-width: 320px;
-  align-self: stretch
-}
 
-.youth-dashboard-senior .quest-welcome-art img {
-  max-height: 290px;
-  object-fit: contain;
-  filter: drop-shadow(0 14px 16px color-mix(in srgb, var(--text) 12%, transparent))
-}
 
-.youth-dashboard-senior .quest-welcome-actions {
-  gap: 10px;
-  flex-wrap: wrap
-}
 
-.youth-dashboard-senior .quest-welcome-actions .button,
-.youth-dashboard-senior .full-action {
+
+
+
+
+
+.youth-dashboard-senior .quest-welcome-actions .button{
   min-height: 48px;
   border-radius: 15px;
   padding: 12px 16px;
@@ -4227,15 +3741,10 @@ textarea:focus-visible {
   font-weight: 850
 }
 
-.youth-dashboard-senior .quest-focus-grid {
-  grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr);
-  gap: 16px;
-  margin-top: 16px
-}
+
 
 .youth-dashboard-senior .quest-focus-grid>.card,
 .youth-dashboard-senior .yq-journey-grid>.card,
-.youth-dashboard-senior .quest-milestone-card,
 .youth-dashboard-senior .quest-secondary-grid>.card {
   border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
   border-radius: 24px;
@@ -4289,8 +3798,7 @@ textarea:focus-visible {
   line-height: 1.45
 }
 
-.youth-dashboard-senior .yq-progress-meter,
-.youth-dashboard-senior .team-quest-track {
+.youth-dashboard-senior .yq-progress-meter{
   height: 12px;
   border-radius: 999px;
   overflow: hidden;
@@ -4298,8 +3806,7 @@ textarea:focus-visible {
   border: 1px solid color-mix(in srgb, var(--border) 70%, transparent)
 }
 
-.youth-dashboard-senior .yq-progress-meter i,
-.youth-dashboard-senior .team-quest-track i {
+.youth-dashboard-senior .yq-progress-meter i{
   display: block;
   height: 100%;
   border-radius: inherit;
@@ -4341,14 +3848,9 @@ textarea:focus-visible {
   line-height: 1.35
 }
 
-.youth-dashboard-senior .quest-next-card {
-  display: flex;
-  flex-direction: column
-}
 
-.youth-dashboard-senior .quest-next-card .full-action {
-  margin-top: auto
-}
+
+
 
 .youth-dashboard-senior .yq-journey-grid {
   grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr);
@@ -4356,11 +3858,9 @@ textarea:focus-visible {
   margin-top: 16px
 }
 
-.youth-dashboard-senior .quest-group-journey {
-  background: linear-gradient(145deg, color-mix(in srgb, var(--tile1) 45%, var(--surface)), var(--surface))
-}
 
-.youth-dashboard-senior .journey-badge,
+
+
 .youth-dashboard-senior .milestone-map-icon {
   width: 46px;
   height: 46px;
@@ -4372,115 +3872,35 @@ textarea:focus-visible {
   color: var(--text)
 }
 
-.youth-dashboard-senior .team-quest-progress {
-  margin-top: 20px;
-  padding: 16px;
-  border-radius: 18px;
-  background: color-mix(in srgb, var(--surface) 85%, var(--tile1));
-  border: 1px solid color-mix(in srgb, var(--border) 75%, transparent)
-}
 
-.youth-dashboard-senior .team-quest-heading {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 12px
-}
 
-.youth-dashboard-senior .team-quest-avatar {
-  width: 40px;
-  height: 40px;
-  display: grid;
-  place-items: center;
-  border-radius: 13px;
-  background: var(--tile4);
-  color: var(--text);
-  flex: 0 0 auto
-}
 
-.youth-dashboard-senior .team-quest-heading>div {
-  display: grid;
-  gap: 3px;
-  min-width: 0;
-  flex: 1
-}
 
-.youth-dashboard-senior .team-quest-heading strong {
-  font-size: 15px;
-  overflow-wrap: anywhere
-}
 
-.youth-dashboard-senior .team-quest-heading small {
-  font-size: 12px;
-  color: var(--muted)
-}
 
-.youth-dashboard-senior .team-quest-heading>b {
-  font-size: 23px;
-  letter-spacing: -.04em
-}
 
-.youth-dashboard-senior .team-quest-foot {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 10px;
-  font-size: 12px;
-  color: var(--muted)
-}
 
-.youth-dashboard-senior .team-quest-foot span:first-child {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-weight: 800;
-  color: var(--text)
-}
 
-.youth-dashboard-senior .friendly-privacy-note {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin-top: 14px;
-  padding: 11px 12px;
-  border-radius: 13px;
-  background: color-mix(in srgb, var(--tile4) 58%, var(--surface));
-  font-size: 12px;
-  line-height: 1.45
-}
 
-.youth-dashboard-senior .friendly-privacy-note svg {
-  flex: 0 0 auto;
-  margin-top: 1px
-}
 
-.youth-dashboard-senior .group-comparison-note {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-  margin-top: 14px;
-  padding: 14px;
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--tile2) 45%, var(--surface))
-}
 
-.youth-dashboard-senior .group-comparison-note>svg {
-  flex: 0 0 auto;
-  margin-top: 2px
-}
 
-.youth-dashboard-senior .group-comparison-note strong {
-  font-size: 13px
-}
 
-.youth-dashboard-senior .group-comparison-note p {
-  font-size: 12px;
-  line-height: 1.5;
-  margin: 5px 0 0;
-  color: var(--muted)
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 .youth-dashboard-senior .yq-streak-hero {
   margin: 18px 0 12px;
@@ -4512,13 +3932,9 @@ textarea:focus-visible {
   line-height: 1.45
 }
 
-.youth-dashboard-senior .quest-milestone-journey {
-  margin-top: 16px
-}
 
-.youth-dashboard-senior .quest-milestone-card {
-  background: linear-gradient(145deg, color-mix(in srgb, var(--tile2) 35%, var(--surface)), var(--surface))
-}
+
+
 
 .youth-dashboard-senior .milestone-journey-track {
   display: flex;
@@ -4542,7 +3958,7 @@ textarea:focus-visible {
 }
 
 .youth-dashboard-senior .milestone-stop:not(:last-child)::after {
-  content: '';
+  content: "";
   position: absolute;
   left: 39px;
   right: 9px;
@@ -4612,10 +4028,7 @@ textarea:focus-visible {
   font-size: 13px
 }
 
-.youth-dashboard-senior .quest-secondary-grid {
-  gap: 16px;
-  margin-top: 16px
-}
+
 
 .youth-dashboard-senior .activity {
   gap: 12px;
@@ -4631,86 +4044,38 @@ textarea:focus-visible {
   font-size: 12px
 }
 
-.youth-dashboard-senior .text-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 42px;
-  font-weight: 850
-}
 
-.youth-dashboard-senior .dashboard-qr-minimized {
-  margin-top: 16px
-}
 
-.youth-dashboard-senior a:focus-visible,
-.youth-dashboard-senior button:focus-visible {
-  outline: 3px solid var(--focus);
-  outline-offset: 3px
-}
+
+
+
 
 @media(max-width:1050px) {
-  .youth-dashboard-senior .quest-focus-grid {
-    grid-template-columns: minmax(0, 1fr)
-  }
+  
 
   .youth-dashboard-senior .yq-journey-grid {
     grid-template-columns: minmax(0, 1fr)
   }
 
-  .youth-dashboard-senior .quest-welcome-art {
-    max-width: 250px
-  }
+  
 }
 
 @media(max-width:760px) {
-  .youth-dashboard-senior .youth-home-senior {
-    padding: 10px 12px 20px
-  }
+  
 
-  .youth-dashboard-senior .quest-welcome {
-    border-radius: 23px;
-    padding: 20px 17px 0;
-    gap: 4px
-  }
+  
 
-  .youth-dashboard-senior .quest-welcome-copy {
-    width: 100%
-  }
+  
 
-  .youth-dashboard-senior .quest-welcome h2 {
-    font-size: 30px;
-    max-width: 16ch
-  }
+  
 
-  .youth-dashboard-senior .quest-welcome p {
-    font-size: 14px;
-    line-height: 1.5
-  }
+  
 
-  .youth-dashboard-senior .quest-welcome-art {
-    height: 145px;
-    max-width: 100%;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    overflow: hidden
-  }
+  
 
-  .youth-dashboard-senior .quest-welcome-art img {
-    height: 155px;
-    max-height: 155px;
-    width: auto;
-    max-width: 100%;
-    object-fit: contain
-  }
+  
 
-  .youth-dashboard-senior .quest-welcome-actions {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    width: 100%;
-    padding-bottom: 14px
-  }
+  
 
   .youth-dashboard-senior .quest-welcome-actions .button {
     width: 100%;
@@ -4718,16 +4083,14 @@ textarea:focus-visible {
     min-height: 48px
   }
 
-  .youth-dashboard-senior .quest-focus-grid,
-  .youth-dashboard-senior .yq-journey-grid,
-  .youth-dashboard-senior .quest-secondary-grid {
+  
+  .youth-dashboard-senior .yq-journey-grid{
     gap: 12px;
     margin-top: 12px
   }
 
   .youth-dashboard-senior .quest-focus-grid>.card,
   .youth-dashboard-senior .yq-journey-grid>.card,
-  .youth-dashboard-senior .quest-milestone-card,
   .youth-dashboard-senior .quest-secondary-grid>.card {
     padding: 17px 15px;
     border-radius: 21px
@@ -4786,22 +4149,13 @@ textarea:focus-visible {
     scroll-snap-align: start
   }
 
-  .youth-dashboard-senior .team-quest-progress {
-    padding: 13px;
-    margin-top: 15px
-  }
+  
 
-  .youth-dashboard-senior .team-quest-heading>b {
-    font-size: 21px
-  }
+  
 
-  .youth-dashboard-senior .team-quest-foot {
-    font-size: 11px
-  }
+  
 
-  .youth-dashboard-senior .group-comparison-note {
-    padding: 12px
-  }
+  
 
   .youth-dashboard-senior .milestone-journey-track {
     margin-inline: -3px;
@@ -4825,23 +4179,15 @@ textarea:focus-visible {
     min-width: 0
   }
 
-  .youth-dashboard-senior .quest-secondary-grid {
-    grid-template-columns: minmax(0, 1fr)
-  }
+  
 }
 
 @media(min-width:761px) and (max-width:1050px) {
-  .youth-dashboard-senior .quest-welcome {
-    padding: 22px
-  }
+  
 
-  .youth-dashboard-senior .quest-welcome-art {
-    height: 205px
-  }
+  
 
-  .youth-dashboard-senior .quest-welcome-art img {
-    max-height: 210px
-  }
+  
 
   .youth-dashboard-senior .yq-progress-overview {
     justify-content: flex-start
@@ -4854,8 +4200,7 @@ textarea:focus-visible {
 
 @media(prefers-reduced-motion:reduce) {
 
-  .youth-dashboard-senior .yq-progress-meter i,
-  .youth-dashboard-senior .team-quest-track i {
+  .youth-dashboard-senior .yq-progress-meter i{
     transition: none
   }
 
@@ -4888,43 +4233,22 @@ textarea:focus-visible {
 
 
 /* Youth dashboard v2: playful scoreboard cards, with no circular progress UI. */
-.youth-dashboard-senior .youth-home-senior {
-  width: min(1240px, 100%);
-  margin-inline: auto;
-  padding: clamp(14px, 2.8vw, 32px);
-  gap: clamp(16px, 2.2vw, 26px);
-}
 
-.youth-dashboard-senior .quest-welcome {
-  border-radius: 28px;
-  overflow: hidden;
-  padding: clamp(22px, 4vw, 44px);
-  min-height: 230px;
-  box-shadow: 0 12px 35px color-mix(in srgb, var(--text, #182033) 8%, transparent);
-}
 
-.youth-dashboard-senior .quest-welcome h2 {
-  font-size: clamp(1.8rem, 4.3vw, 3.1rem);
-  line-height: 1.04;
-  letter-spacing: -.035em;
-}
 
-.youth-dashboard-senior .quest-focus-grid,
+
+
+
+
 .youth-dashboard-senior .yq-journey-grid,
-.youth-dashboard-senior .yq-skill-milestone-grid,
-.youth-dashboard-senior .quest-secondary-grid {
+.youth-dashboard-senior .yq-skill-milestone-grid{
   gap: clamp(14px, 2vw, 24px);
 }
 
-.youth-dashboard-senior .quest-progress-card,
-.youth-dashboard-senior .quest-next-card,
+
 .youth-dashboard-senior .yq-group-progress-card,
 .youth-dashboard-senior .yq-attendance-card,
-.youth-dashboard-senior .quest-milestone-card,
-.youth-dashboard-senior .yq-skill-tree-card,
-.youth-dashboard-senior .quest-activity-card,
-.youth-dashboard-senior .quest-event-card,
-.youth-dashboard-senior .quest-empty-event {
+.youth-dashboard-senior .yq-skill-tree-card{
   border-radius: 24px;
   padding: clamp(18px, 2.5vw, 28px);
   box-shadow: 0 8px 24px color-mix(in srgb, var(--text, #182033) 6%, transparent);
@@ -5066,11 +4390,7 @@ textarea:focus-visible {
   font-size: .9rem;
 }
 
-.youth-dashboard-senior .team-quest-progress {
-  border-radius: 18px;
-  padding: 16px;
-  background: color-mix(in srgb, var(--surface, #fff) 90%, var(--border, #e5e7eb));
-}
+
 
 .youth-dashboard-senior .milestone-journey-track {
   gap: 12px;
@@ -5088,19 +4408,11 @@ textarea:focus-visible {
 }
 
 @media (max-width: 760px) {
-  .youth-dashboard-senior .youth-home-senior {
-    padding: 12px;
-  }
+  
 
-  .youth-dashboard-senior .quest-welcome {
-    border-radius: 22px;
-    min-height: unset;
-    padding: 22px 18px;
-  }
+  
 
-  .youth-dashboard-senior .quest-welcome-art {
-    max-width: 120px;
-  }
+  
 
   .youth-dashboard-senior .yq-scoreboard-grid {
     grid-template-columns: minmax(0, 1fr);
@@ -5156,9 +4468,7 @@ textarea:focus-visible {
     font-size: 2rem;
   }
 
-  .youth-dashboard-senior .quest-welcome-art {
-    display: none;
-  }
+  
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -6112,7 +5422,7 @@ textarea:focus-visible {
 
 .youth-dashboard-v3::before {
   opacity: .16 !important;
-  background: var(--theme-bg-image, url('/quest-media/graphics/youth-dashboard-bg.png')) center top / cover no-repeat !important;
+  background: var(--theme-bg-image, url("/quest-media/graphics/youth-dashboard-bg.png")) center top / cover no-repeat !important;
 }
 
 .youth-dashboard-v3 .yq-kid-home {
@@ -7215,4 +6525,35 @@ textarea:focus-visible {
     width: 66px;
     height: 66px;
   }
+}
+/* Period controls for the size-normalised group leaderboard. */
+.public-period-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 1rem 0 0.35rem;
+}
+.public-period-tabs button {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface, transparent);
+  color: var(--text);
+  padding: 0.48rem 0.9rem;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.public-period-tabs button.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--buttonText, #fff);
+}
+.public-period-tabs button:focus-visible {
+  outline: 2px solid var(--focus, var(--accent));
+  outline-offset: 2px;
+}
+.public-leaderboard-period-label {
+  margin: 0 0 0.75rem;
+  font-size: 0.82rem;
 }

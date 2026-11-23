@@ -1056,3 +1056,169 @@ class PushNotificationHardeningTests(TestCase):
         self.a.refresh_from_db()
         self.assertTrue(self.a.notifications_opt_in)
         self.assertTrue(self.a.push_notifications_opt_in)
+
+
+class LoginAndQrRewardTests(TestCase):
+    def setUp(self):
+        self.programme = Programme.objects.create(
+            name='Rewards', location='Glasgow', attendance_points=100,
+            streak_rules=[{'days': 2, 'multiplier': 1.2}, {'days': 3, 'multiplier': 1.5}],
+            login_reward_config={
+                'enabled': True, 'daily_xp': 10, 'timezone': 'Europe/London',
+                'milestones': [{'days': 2, 'bonus_xp': 20}, {'days': 3, 'bonus_xp': 30}],
+            },
+        )
+        self.youth_user = User.objects.create_user('reward-youth', password='YouthQuest123!')
+        self.youth = Profile.objects.create(user=self.youth_user, role='youth', gamertag='Comet', programme=self.programme)
+        self.worker_user = User.objects.create_user('reward-worker', password='YouthQuest123!')
+        self.worker = Profile.objects.create(user=self.worker_user, role='worker', gamertag='Worker', programme=self.programme)
+        self.client = Client(enforce_csrf_checks=False)
+
+    def _login(self, username):
+        response = self.client.post('/api/auth/login/', data=json.dumps({
+            'username': username, 'password': 'YouthQuest123!',
+        }), content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+
+    def test_successful_login_awards_once_and_refresh_does_not_award(self):
+        login_payload = json.dumps({'username': 'reward-youth', 'password': 'YouthQuest123!'})
+        first = self.client.post('/api/auth/login/', data=login_payload, content_type='application/json')
+        self.assertEqual(first.status_code, 200)
+        self.youth.refresh_from_db()
+        self.assertEqual(self.youth.current_xp, 10)
+        self.client.post('/api/auth/refresh/', data=json.dumps({}), content_type='application/json')
+        self.client.post('/api/auth/login/', data=login_payload, content_type='application/json')
+        self.youth.refresh_from_db()
+        self.assertEqual(self.youth.current_xp, 10)
+        self.assertEqual(DailyLogin.objects.filter(profile=self.youth).count(), 1)
+        self.assertEqual(XPTransaction.objects.filter(target=self.youth, source='daily_login').count(), 1)
+
+    def test_login_rewards_are_idempotent_and_milestones_award_once(self):
+        from unittest.mock import patch
+        from datetime import datetime
+        from django.utils.timezone import make_aware
+        from core.services import process_daily_login_reward
+
+        for day in (17, 18, 19):
+            moment = make_aware(datetime(2026, 11, day, 12, 0))
+            with patch('core.services.timezone.now', return_value=moment):
+                result = process_daily_login_reward(self.youth)
+                if day == 19:
+                    duplicate = process_daily_login_reward(self.youth)
+        self.youth.refresh_from_db()
+        self.assertEqual(self.youth.current_xp, 80)
+        self.assertEqual(XPTransaction.objects.filter(target=self.youth, source='daily_login').count(), 3)
+        self.assertEqual(XPTransaction.objects.filter(target=self.youth, source='login_streak').count(), 2)
+        self.assertFalse(duplicate['awarded'])
+        self.assertEqual(result['streak'], 3)
+
+    def test_qr_checkins_apply_onsite_multipliers_once_per_local_day(self):
+        from unittest.mock import patch
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+
+        attendance_results = []
+        first_moment = datetime(2026, 11, 17, 12, 0, tzinfo=ZoneInfo('Europe/London'))
+        with patch('core.services.timezone.now', return_value=first_moment):
+            self._login('reward-youth')
+        for day in (17, 18, 19):
+            moment = datetime(2026, 11, day, 12, 0, tzinfo=ZoneInfo('Europe/London'))
+            token = f'reward-qr-{day}'
+            AttendanceSession.objects.create(
+                programme=self.programme, created_by=self.worker_user, token=token,
+                expires_at=moment + timedelta(minutes=5),
+            )
+            with patch('api.attendance.timezone.now', return_value=moment), patch('core.services.timezone.now', return_value=moment):
+                scan = self.client.post('/api/attendance/scan/', data=json.dumps({'token': token}), content_type='application/json')
+                self.assertEqual(scan.status_code, 200)
+                attendance_results.append(scan.json())
+
+        self.assertEqual([row['awarded'] for row in attendance_results], [100, 120, 150])
+        self.assertEqual([row['streak'] for row in attendance_results], [1, 2, 3])
+        self.assertEqual([row['multiplier'] for row in attendance_results], [1.0, 1.2, 1.5])
+        self.assertEqual(XPTransaction.objects.filter(target=self.youth, source='attendance').count(), 3)
+
+    def test_second_qr_scan_same_day_does_not_award_again(self):
+        self._login('reward-youth')
+        first_session = AttendanceSession.objects.create(
+            programme=self.programme, created_by=self.worker_user, token='same-day-first',
+            expires_at=timezone.now()+timedelta(minutes=5),
+        )
+        second_session = AttendanceSession.objects.create(
+            programme=self.programme, created_by=self.worker_user, token='same-day-second',
+            expires_at=timezone.now()+timedelta(minutes=5),
+        )
+        first = self.client.post('/api/attendance/scan/', data=json.dumps({'token': first_session.token}), content_type='application/json')
+        self.assertEqual(first.status_code, 200)
+        second = self.client.post('/api/attendance/scan/', data=json.dumps({'token': second_session.token}), content_type='application/json')
+        self.assertEqual(second.status_code, 200)
+        self.assertTrue(second.json()['alreadyRewardedToday'])
+        self.assertEqual(second.json()['awarded'], 0)
+        self.assertEqual(XPTransaction.objects.filter(target=self.youth, source='attendance').count(), 1)
+
+    def test_inactive_account_membership_is_retained_and_can_be_counted(self):
+        group = Group.objects.create(name='Inactive-aware group', programme=self.programme)
+        group.members.add(self.youth)
+        self._login('reward-worker')
+        disabled = self.client.post('/api/staff/accounts/', data=json.dumps({
+            'action': 'set_access', 'userId': self.youth_user.id, 'active': False,
+        }), content_type='application/json')
+        self.assertEqual(disabled.status_code, 200)
+        membership = GroupMembership.objects.get(group=group, profile=self.youth)
+        self.assertEqual(membership.status, 'inactive')
+        updated = self.client.post('/api/staff/groups/members/', data=json.dumps({
+            'groupId': group.id, 'memberIds': [self.youth.id], 'includeInactiveMembers': True,
+        }), content_type='application/json')
+        self.assertEqual(updated.status_code, 200)
+        group.refresh_from_db()
+        self.assertTrue(group.include_inactive_members)
+        self.assertEqual(group.members.filter(pk=self.youth.id).count(), 1)
+        enabled = self.client.post('/api/staff/accounts/', data=json.dumps({
+            'action': 'set_access', 'userId': self.youth_user.id, 'active': True,
+        }), content_type='application/json')
+        self.assertEqual(enabled.status_code, 200)
+        membership.refresh_from_db()
+        self.assertEqual(membership.status, 'active')
+
+    def test_map_event_has_no_separate_attendance_reward_configuration(self):
+        event = MapEvent.objects.create(
+            programme=self.programme, title='Scheduled activity',
+            start_at=timezone.now()+timedelta(days=2),
+            end_at=timezone.now()+timedelta(days=2, hours=2),
+        )
+        self.assertFalse(hasattr(event, 'attendance_enabled'))
+        self.assertFalse(hasattr(event, 'attendance_base_xp'))
+        self.assertEqual(EventCheckIn.objects.filter(event=event).count(), 0)
+
+    def test_group_xp_stays_with_group_when_member_leaves(self):
+        from core.services import award_xp
+        first = Group.objects.create(name='First group', programme=self.programme)
+        second = Group.objects.create(name='Second group', programme=self.programme)
+        first.members.add(self.youth)
+        award_xp(target=self.youth, actor=self.worker_user, amount=100, source='test', reason='Before transfer')
+        first.members.remove(self.youth)
+        second.members.add(self.youth)
+        award_xp(target=self.youth, actor=self.worker_user, amount=50, source='test', reason='After transfer')
+        first.refresh_from_db(); second.refresh_from_db()
+        self.assertEqual(first.xp, 100)
+        self.assertEqual(second.xp, 50)
+        self.assertEqual(sum(GroupXPContribution.objects.filter(group=first).values_list('amount', flat=True)), 100)
+        self.assertEqual(sum(GroupXPContribution.objects.filter(group=second).values_list('amount', flat=True)), 50)
+        self.assertEqual(GroupMembership.objects.get(group=first, profile=self.youth).status, 'transferred')
+        self.assertEqual(GroupMembership.objects.get(group=second, profile=self.youth).status, 'active')
+
+    def test_group_leaderboards_expose_weekly_monthly_and_overall_periods(self):
+        from core.services import award_xp
+        self.programme.group_scoring_config = {'minimum_group_size': 1, 'ranking_periods': ['weekly', 'monthly', 'overall']}
+        self.programme.save(update_fields=['group_scoring_config'])
+        group = Group.objects.create(name='Comets', programme=self.programme)
+        group.members.add(self.youth)
+        award_xp(target=self.youth, actor=self.worker_user, amount=75, source='test', reason='Leaderboard XP')
+        response = self.client.get('/api/public/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(set(response.json()['groupLeaderboards'].keys()), {'weekly', 'monthly', 'overall'})
+        overall = response.json()['groupLeaderboards']['overall'][0]
+        self.assertEqual(overall['name'], 'Comets')
+        self.assertEqual(overall['xp'], 75)
+        self.assertEqual(overall['rank'], 1)
+

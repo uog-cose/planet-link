@@ -84,7 +84,7 @@ export function Groups({ embedded = false }: { embedded?: boolean }) {
     try {
       await api("/staff/groups/members/", {
         method: "POST",
-        body: JSON.stringify({ groupId: g.id, memberIds: g.memberIds }),
+        body: JSON.stringify({ groupId: g.id, memberIds: g.memberIds, includeInactiveMembers: Boolean(g.includeInactiveMembers) }),
       });
       show("Group membership saved.", "success");
       load();
@@ -244,7 +244,8 @@ export function Groups({ embedded = false }: { embedded?: boolean }) {
                   <strong>{g.name}</strong>
                   <small>
                     {g.memberNames?.length || 0} players ·{" "}
-                    {Number(g.xp || 0).toLocaleString()} XP
+                    {Number(g.xp || 0).toLocaleString()} collective XP ·{" "}
+                    {Math.round(Number(g.averageXpPerMember || 0)).toLocaleString()} average/member
                   </small>
                 </span>
                 <span className="group-trigger-end">
@@ -254,6 +255,29 @@ export function Groups({ embedded = false }: { embedded?: boolean }) {
               </button>
               {isOpen && (
                 <div className="group-compact-body">
+                  <div className="group-scoring-setting">
+                    <Toggle
+                      checked={Boolean(g.includeInactiveMembers)}
+                      onChange={async (includeInactiveMembers) => {
+                        try {
+                          await api("/staff/groups/members/", {
+                            method: "POST",
+                            body: JSON.stringify({
+                              groupId: g.id,
+                              memberIds: g.memberIds || [],
+                              includeInactiveMembers,
+                            }),
+                          });
+                          show("Group scoring setting saved.", "success");
+                          load();
+                        } catch (e) {
+                          show(e instanceof Error ? e.message : "Unable to update group scoring", "error");
+                        }
+                      }}
+                      label="Include inactive accounts in group average"
+                      description="When enabled, young people whose accounts are inactive remain in the group ranking denominator. Departed members are not included."
+                    />
+                  </div>
                   <label className="group-player-search">
                     <Search size={15} />
                     <input

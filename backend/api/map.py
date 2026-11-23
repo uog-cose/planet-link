@@ -63,7 +63,7 @@ def map_event(request):
     if request.method=='GET':
         if not programme:return ok({'events':[],'lastEvent':None,'currentEvent':None,'nextEvent':None})
         summary=event_summary(programme, include_map=True)
-        events=[event_payload(e, include_map=True) for e in MapEvent.objects.filter(programme=programme).order_by('-start_at','-id')[:20]]
+        events=[event_payload(e, include_map=True, include_attendance_config=bool(actor and actor.role in ['worker','admin'])) for e in MapEvent.objects.filter(programme=programme).order_by('-start_at','-id')[:20]]
         return ok({'events':events,'mapAccess':{'instanceId':programme.id,'token':programme.public_map_token,'expiresAt':programme.public_map_token_expires_at},**summary})
     if not actor: return ok({'detail':'Forbidden'},403)
     if not programme:return ok({'detail':'No active programme'},400)
@@ -74,6 +74,15 @@ def map_event(request):
         event.pin_enabled=bool(body.get('pinEnabled',True)); event.save(update_fields=['pin_enabled'])
         AuditLog.objects.create(actor=request.user,action='map_event_pin_toggled',target=str(event.id),detail={'pinEnabled':event.pin_enabled})
         return ok({'event':event_payload(event,include_map=True)})
+    if request.method=='PATCH' and str(body.get('action','')).lower()=='cancel':
+        try:event=MapEvent.objects.get(pk=int(body.get('id')),programme=programme)
+        except (TypeError,ValueError,MapEvent.DoesNotExist):return ok({'detail':'Event not found'},404)
+        if event.status == 'cancelled': return ok({'event':event_payload(event,include_map=True,include_attendance_config=True)})
+        if event.ended_at or (event.end_at and event.end_at <= timezone.now()): return ok({'detail':'Completed events cannot be cancelled. Correct attendance records if needed.'},400)
+        event.status='cancelled'; event.save(update_fields=['status'])
+        AttendanceSession.objects.filter(event=event, active=True).update(active=False)
+        AuditLog.objects.create(actor=request.user,action='map_event_cancelled',target=str(event.id),detail={})
+        return ok({'event':event_payload(event,include_map=True,include_attendance_config=True),**event_summary(programme,include_map=True)})
     if request.method=='POST' and str(body.get('action','')).lower()=='private-link':
         programme=active_programme_for(actor)
         if not programme:return ok({'detail':'No active programme'},400)
@@ -131,7 +140,7 @@ def map_event(request):
     event.lat=lat; event.lng=lng
     event.start_at=dt(body.get('startAt')) or timezone.now()
     event.end_at=dt(body.get('endAt')) or (event.start_at + timedelta(hours=24))
-    event.visible=bool(body.get('visible',True)); event.pin_enabled=bool(body.get('pinEnabled',True)); event.status='scheduled'
+    event.visible=bool(body.get('visible',True)); event.pin_enabled=bool(body.get('pinEnabled',True))
     now=timezone.now()
     if not event.start_at:return ok({'detail':'Start date and time are required'},400)
     # NOW is resolved on the server at final submission time; never reject it as stale.
@@ -139,10 +148,11 @@ def map_event(request):
     if raw_start!='NOW' and event.start_at < now.replace(second=0,microsecond=0):return ok({'detail':'Start date and time has already passed'},400)
     if not event.end_at:return ok({'detail':'End date and time are required'},400)
     if event.end_at<=event.start_at:return ok({'detail':'End date and time must be after the start date and time'},400)
+    event.status = 'ended' if event.ended_at or event.end_at <= now else 'scheduled'
     event.save()
     event_summary(programme)
     AuditLog.objects.create(actor=request.user,action='map_event_saved',target=str(event.id),detail={'lat':lat,'lng':lng,'startAt':str(event.start_at),'endAt':str(event.end_at)})
-    return ok({'event':event_payload(event, include_map=True),**event_summary(programme, include_map=True)})
+    return ok({'event':event_payload(event, include_map=True, include_attendance_config=True),**event_summary(programme, include_map=True)})
 
 @require_http_methods(['POST'])
 def map_event_end(request):
@@ -153,5 +163,5 @@ def map_event_end(request):
     except (TypeError,ValueError,MapEvent.DoesNotExist):return ok({'detail':'Event not found'},404)
     event.ended_at=timezone.now(); event.status='ended'; event.save(update_fields=['ended_at','status'])
     AuditLog.objects.create(actor=request.user,action='map_event_ended',target=str(event.id),detail={})
-    return ok({'event':event_payload(event, include_map=True),**event_summary(programme, include_map=True)})
+    return ok({'event':event_payload(event, include_map=True, include_attendance_config=True),**event_summary(programme, include_map=True)})
 

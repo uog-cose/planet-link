@@ -1,4 +1,7 @@
 from .common import *
+from datetime import datetime, time
+from django.db.models import Sum
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 
 def _public_instances():
@@ -52,16 +55,97 @@ def public_dashboard(request):
     if show['groups']:
         groups_qs=Group.objects.filter(programme=programme).prefetch_related('members') if programme else Group.objects.none()
         group_rows=[]
+        scoring = programme.group_scoring_config if programme and isinstance(programme.group_scoring_config, dict) else {}
+        minimum_group_size = max(1, int(scoring.get('minimum_group_size', 2) or 2))
         for group in groups_qs:
-            members=group.members.filter(role='youth',public_opt_in=True,user__is_active=True,programme=programme)
-            member_ids=list(members.values_list('id',flat=True))
+            visible_members=group.members.filter(role='youth',public_opt_in=True,user__is_active=True,programme=programme)
+            member_ids=list(visible_members.values_list('id',flat=True))
+            eligible_members=group.members.filter(role='youth',programme=programme)
+            if not group.include_inactive_members:
+                eligible_members=eligible_members.filter(user__is_active=True)
+            eligible_count=eligible_members.count()
             skills_count=ProfileSkill.objects.filter(profile_id__in=member_ids,completed=True).count() if member_ids else 0
             achievements_count=ProfileBadge.objects.filter(profile_id__in=member_ids).count() if member_ids else 0
             challenges_count=GameAttempt.objects.filter(profile_id__in=member_ids,status='completed',game__programme=programme).count() if member_ids else 0
-            group_rows.append({'name':group.name,'xp':int(group.xp or 0),'targetXp':int(programme.target_xp if programme else 1),'progress':round(min(100,max(0,(float(group.xp or 0)/max(1,float(programme.target_xp if programme else 1)))*100)),1),'members':len(member_ids),'skills':skills_count,'achievements':achievements_count,'challenges':challenges_count})
-        group_rows.sort(key=lambda x:(-x['xp'],x['name'].lower()))
-        for i,row in enumerate(group_rows,1): row['rank']=i
+            collective_xp=int(group.xp or 0)
+            average_xp=round(collective_xp/eligible_count,2) if eligible_count else 0
+            group_rows.append({'id':group.id,'name':group.name,'xp':collective_xp,'averageXpPerMember':average_xp,'eligibleMembers':eligible_count,'ranked':eligible_count>=minimum_group_size,'targetXp':int(programme.target_xp if programme else 1),'progress':round(min(100,max(0,(float(collective_xp)/max(1,float(programme.target_xp if programme else 1)))*100)),1),'members':len(member_ids),'skills':skills_count,'achievements':achievements_count,'challenges':challenges_count})
+        ranked_groups=sorted([x for x in group_rows if x['ranked']],key=lambda x:(-x['averageXpPerMember'],x['name'].lower()))
+        ranks={row['id']:i for i,row in enumerate(ranked_groups,1)}
+        for row in group_rows:
+            row['rank']=ranks.get(row['id'])
+        group_rows.sort(key=lambda x:(not x['ranked'], x['rank'] or 9999, x['name'].lower()))
         data['groups']=group_rows
+        data['groupScoring']={'method':'average_xp_per_eligible_member','minimumGroupSize':minimum_group_size}
+
+        configured_periods = scoring.get('ranking_periods', ['weekly', 'monthly', 'overall'])
+        if not isinstance(configured_periods, list): configured_periods = ['weekly', 'monthly', 'overall']
+        login_config = programme.login_reward_config if programme and isinstance(programme.login_reward_config, dict) else {}
+        try: programme_tz = ZoneInfo(str(login_config.get('timezone') or 'Europe/London'))
+        except (ZoneInfoNotFoundError, ValueError): programme_tz = timezone.get_current_timezone()
+        local_now = timezone.localtime(timezone.now(), programme_tz)
+        period_data = {}
+        for period in [x for x in ('weekly', 'monthly', 'overall') if x in configured_periods]:
+            rows = []
+            if period == 'weekly':
+                start_date = local_now.date() - timedelta(days=local_now.weekday())
+            elif period == 'monthly':
+                start_date = local_now.date().replace(day=1)
+            else:
+                start_date = None
+            if start_date is not None:
+                start_at = timezone.make_aware(datetime.combine(start_date, time.min), programme_tz)
+                period_days = max(1, (local_now.date() - start_date).days + 1)
+            else:
+                start_at = None
+                period_days = 1
+            for group in groups_qs:
+                if period == 'overall':
+                    period_xp = int(group.xp or 0)
+                    eligible = group.members.filter(role='youth', programme=programme)
+                    if not group.include_inactive_members:
+                        eligible = eligible.filter(user__is_active=True)
+                    eligible_count = eligible.count()
+                    average_members = float(eligible_count)
+                else:
+                    policy = group.scoring_policy_history.filter(effective_from__lte=start_at).order_by('-effective_from').first()
+                    include_inactive = bool(policy.include_inactive_members) if policy else False
+                    memberships = GroupMembership.objects.filter(
+                        group=group, joined_at__lte=local_now,
+                    ).filter(models.Q(left_at__isnull=True) | models.Q(left_at__gte=start_at)).select_related('profile__user')
+                    if not include_inactive:
+                        memberships = memberships.filter(profile__user__is_active=True)
+                    membership_rows = list(memberships)
+                    eligible_profile_ids = set()
+                    member_days = 0
+                    for membership in membership_rows:
+                        joined = timezone.localtime(membership.joined_at, programme_tz).date()
+                        left = timezone.localtime(membership.left_at, programme_tz).date() if membership.left_at else local_now.date()
+                        first_day = max(start_date, joined)
+                        # The departure date itself is no longer an eligible day.
+                        last_day = min(local_now.date(), left - timedelta(days=1)) if membership.left_at else local_now.date()
+                        if last_day >= first_day:
+                            eligible_profile_ids.add(membership.profile_id)
+                            member_days += (last_day - first_day).days + 1
+                    eligible_count = len(eligible_profile_ids)
+                    average_members = member_days / period_days
+                    period_xp = int(GroupXPContribution.objects.filter(
+                        group=group, created_at__gte=start_at, created_at__lte=local_now,
+                    ).aggregate(total=Sum('amount'))['total'] or 0)
+                    period_xp = max(0, period_xp)
+                average_xp = round(period_xp / average_members, 2) if average_members > 0 else 0
+                rows.append({
+                    'id': group.id, 'name': group.name, 'xp': period_xp,
+                    'averageXpPerMember': average_xp, 'averageMembers': round(average_members, 2),
+                    'eligibleMembers': eligible_count, 'ranked': eligible_count >= minimum_group_size,
+                })
+            ranked = sorted([row for row in rows if row['ranked']], key=lambda row: (-row['averageXpPerMember'], row['name'].lower(), row['id']))
+            rank_by_id = {row['id']: index for index, row in enumerate(ranked, 1)}
+            for row in rows:
+                row['rank'] = rank_by_id.get(row['id'])
+            rows.sort(key=lambda row: (not row['ranked'], row['rank'] or 9999, row['name'].lower()))
+            period_data[period] = rows
+        data['groupLeaderboards'] = period_data
         data['groupMetrics']=group_rows
     week = timezone.now() - timedelta(days=7)
     if show['highRisers']:
@@ -75,7 +159,7 @@ def public_dashboard(request):
     if show['challengesCompleted']: stats['challengesCompleted'] = XPTransaction.objects.filter(programme=programme, target__role='youth', target__programme=programme, source__in=['challenge','drawing-game']).count() if programme else 0
     if show['participants']: stats['participants'] = youth.count()
     if show['attendance']:
-        attendance_today=Attendance.objects.filter(session__programme=programme,attended_at__date=timezone.localdate()).count() if programme else 0
+        attendance_today=Attendance.objects.filter(session__programme=programme,attendance_date=programme_local_date(programme)).count() if programme else 0
         stats['attendanceToday']=attendance_today
         stats['attendanceRegistered']=youth.count()
         stats['attendanceRate']=round((attendance_today/max(1,youth.count()))*100,1)

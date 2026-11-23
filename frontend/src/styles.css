@@ -1,2 +1,15 @@
 @import "./styles/colors.css";
 @import "./styles/index.css";
+
+
+/* Separate login and event streaks from the existing daily attendance streak. */
+.yq-kid-streak-extra { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 14px 0; }
+.yq-kid-streak-extra > div { display: flex; flex-direction: column; gap: 5px; padding: 13px 15px; border: 1px solid var(--border, #d8d6c9); border-radius: 14px; background: var(--surface2, #f3f0e8); min-width: 0; }
+.yq-kid-streak-extra strong { font-size: .82rem; color: var(--muted, #687970); }
+.yq-kid-streak-extra b { font-size: 1.15rem; color: var(--text, #173b32); }
+.yq-kid-streak-extra span { font-size: .78rem; line-height: 1.35; color: var(--muted, #687970); }
+@media (max-width: 560px) { .yq-kid-streak-extra { grid-template-columns: 1fr; } }
+.event-attendance-manager { margin-top: 14px; padding: 16px; border: 1px solid var(--border, #d8d6c9); border-radius: 14px; background: var(--surface, #fffdf7); }
+.event-attendance-manager h4 { margin: 0 0 12px; }
+.event-attendance-manager .top-actions { align-items: center; margin-bottom: 12px; }
+.event-attendance-manager select { min-width: 220px; max-width: 100%; }

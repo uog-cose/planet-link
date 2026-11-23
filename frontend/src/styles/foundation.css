@@ -115,8 +115,7 @@ a:focus-visible {
     flex: 0 0 auto
 }
 
-.sidebar .logo span,
-.brand-mark {
+.sidebar .logo span{
     width: 42px;
     height: 42px;
     display: grid;
@@ -132,16 +131,13 @@ a:focus-visible {
     letter-spacing: -.03em
 }
 
-.sidebar nav,
-.sidebar-bottom {
+.sidebar nav{
     display: grid;
     gap: 6px
 }
 
 .sidebar nav a,
-.sidebar nav button,
-.sidebar-bottom a,
-.sidebar-bottom button {
+.sidebar nav button{
     width: 100%;
     min-height: 44px;
     display: flex;
@@ -159,9 +155,7 @@ a:focus-visible {
 }
 
 .sidebar nav a:hover,
-.sidebar nav button:hover,
-.sidebar-bottom a:hover,
-.sidebar-bottom button:hover {
+.sidebar nav button:hover{
     background: color-mix(in srgb, var(--nav) 70%, var(--color-fff));
     color: var(--color-fff);
     transform: translateX(2px)
@@ -174,11 +168,7 @@ a:focus-visible {
     box-shadow: 0 8px 20px var(--color-rgba-0-0-0-13)
 }
 
-.sidebar-bottom {
-    margin-top: auto;
-    padding-top: 12px;
-    border-top: 1px solid color-mix(in srgb, var(--nav) 65%, var(--color-fff))
-}
+
 
 .sidebar .nav-count {
     margin-left: auto;
@@ -195,9 +185,7 @@ a:focus-visible {
     display: none
 }
 
-.mobile-sidebar-scrim {
-    display: none
-}
+
 
 .topbar {
     min-height: 78px;
@@ -222,7 +210,6 @@ a:focus-visible {
 }
 
 .top-actions,
-.hero-actions,
 .upcoming-meta {
     display: flex;
     align-items: center;
@@ -230,8 +217,7 @@ a:focus-visible {
     flex-wrap: wrap
 }
 
-.icon-btn,
-.avatar-small {
+.icon-btn{
     border: 1px solid var(--border);
     background: var(--surface);
     color: var(--text)
@@ -245,14 +231,7 @@ a:focus-visible {
     place-items: center
 }
 
-.avatar-small {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: grid;
-    place-items: center;
-    font-weight: 900
-}
+
 
 .notification-bell {
     position: relative
@@ -358,8 +337,7 @@ a:focus-visible {
 .grid-4,
 .metric-grid,
 .reward-grid,
-.participant-grid,
-.form-grid {
+.participant-grid{
     display: grid;
     gap: 16px
 }
@@ -376,23 +354,23 @@ a:focus-visible {
     grid-template-columns: repeat(4, minmax(0, 1fr))
 }
 
-.metric-grid .card:nth-child(4n+1),
-.player-stat-strip .card:nth-child(4n+1) {
+.metric-grid .card:nth-child(4n/**/+1),
+.player-stat-strip .card:nth-child(4n/**/+1) {
     background: var(--tile1)
 }
 
-.metric-grid .card:nth-child(4n+2),
-.player-stat-strip .card:nth-child(4n+2) {
+.metric-grid .card:nth-child(4n/**/+2),
+.player-stat-strip .card:nth-child(4n/**/+2) {
     background: var(--tile2)
 }
 
-.metric-grid .card:nth-child(4n+3),
-.player-stat-strip .card:nth-child(4n+3) {
+.metric-grid .card:nth-child(4n/**/+3),
+.player-stat-strip .card:nth-child(4n/**/+3) {
     background: var(--tile3)
 }
 
-.metric-grid .card:nth-child(4n+4),
-.player-stat-strip .card:nth-child(4n+4) {
+.metric-grid .card:nth-child(4n/**/+4),
+.player-stat-strip .card:nth-child(4n/**/+4) {
     background: var(--tile4)
 }
 
@@ -405,8 +383,7 @@ a:focus-visible {
 }
 
 .activity,
-.audit-row,
-.notification-row {
+.audit-row{
     border: 1px solid var(--border);
     background: var(--surface);
     border-radius: 15px
@@ -416,13 +393,9 @@ a:focus-visible {
     padding: 13px
 }
 
-.link-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px
-}
 
-.link-grid a,
+
+
 .config-link-card {
     display: flex;
     align-items: center;
@@ -435,7 +408,7 @@ a:focus-visible {
     transition: .18s var(--q-ease)
 }
 
-.link-grid a:hover,
+
 .config-link-card:hover {
     transform: translateY(-3px);
     border-color: var(--accent);
@@ -505,8 +478,7 @@ a:focus-visible {
 }
 
 .pill,
-.tag,
-.status-pill {
+.tag{
     display: inline-flex;
     align-items: center;
     gap: 5px;
@@ -591,34 +563,13 @@ select {
     appearance: auto
 }
 
-.table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    overflow: hidden;
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    background: var(--surface)
-}
 
-.table th,
-.table td {
-    padding: 11px 13px;
-    text-align: left;
-    border-bottom: 1px solid var(--border);
-    color: var(--text)
-}
 
-.table th {
-    color: var(--muted);
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: .08em
-}
 
-.table tr:last-child td {
-    border-bottom: 0
-}
+
+
+
+
 
 /* Reusable dropdowns, collapsible panels and modals */
 .search-select {
@@ -894,7 +845,7 @@ select {
 }
 
 /* Toggles */
-.toggle-field,
+
 .switch-row,
 .theme-select-row {
     display: flex;
@@ -907,14 +858,14 @@ select {
     background: var(--surface2)
 }
 
-.toggle-field>span,
+
 .switch-row>span:first-child,
 .theme-select-row>span {
     display: grid;
     gap: 3px
 }
 
-.toggle-field small,
+
 .switch-row small,
 .theme-select-row small {
     color: var(--muted);
@@ -981,158 +932,50 @@ select {
     background: var(--bg)
 }
 
-.youth-header,
-.youth-header-v2 {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 18px;
-    padding: 28px clamp(18px, 4vw, 52px) 12px
-}
 
-.youth-header h1 {
-    font-size: clamp(28px, 4vw, 44px);
-    margin: 4px 0;
-    letter-spacing: -.05em
-}
 
-.youth-header-actions {
-    display: flex;
-    align-items: center;
-    gap: 9px
-}
 
-.youth-avatar-link {
-    display: block
-}
 
-.youth-home-v2 {
-    padding-top: 18px
-}
 
-.player-hero-new {
-    position: relative;
-    min-height: 330px;
-    display: grid;
-    grid-template-columns: minmax(220px, .72fr) minmax(300px, 1.15fr) minmax(180px, .55fr);
-    align-items: center;
-    gap: 22px;
-    overflow: hidden;
-    padding: 28px;
-    border-radius: 30px;
-    background: linear-gradient(110deg, var(--nav), color-mix(in srgb, var(--nav) 72%, var(--accent)));
-    color: var(--color-fff);
-    margin-bottom: 22px;
-    box-shadow: var(--q-shadow-lg)
-}
 
-.player-hero-new:after {
-    content: "";
-    position: absolute;
-    inset: auto -90px -170px auto;
-    width: 360px;
-    height: 360px;
-    border: 44px solid color-mix(in srgb, var(--warm) 30%, transparent);
-    border-radius: 50%
-}
 
-.player-hero-art {
-    position: relative;
-    z-index: 2;
-    min-height: 270px;
-    display: grid;
-    place-items: center
-}
 
-.player-hero-art img {
-    width: min(300px, 100%);
-    height: 270px;
-    object-fit: contain
-}
 
-.player-hero-copy {
-    position: relative;
-    z-index: 3
-}
+
+
+
+
+
+
+
+
+
+
 
 .player-hero-copy .eyebrow {
     color: var(--warm);
     margin-top: 18px
 }
 
-.player-hero h2 {
-    font-size: clamp(34px, 4vw, 54px);
-    line-height: .98;
-    letter-spacing: -.06em;
-    margin: 8px 0 12px
-}
 
-.player-hero p {
-    max-width: 500px;
-    color: var(--color-d9e9e3);
-    font-size: 15px
-}
 
-.hero-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    background: color-mix(in srgb, var(--accent) 38%, var(--nav));
-    padding: 8px 12px;
-    border-radius: 999px;
-    font-size: 11px;
-    font-weight: 900
-}
 
-.hero-actions {
-    margin-top: 20px
-}
 
-.hero-xp-summary {
-    position: relative;
-    z-index: 3;
-    align-self: stretch;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 22px;
-    border-radius: 22px;
-    background: var(--color-rgba-255-253-247-11);
-    border: 1px solid var(--color-rgba-255-255-255-16)
-}
 
-.hero-xp-label {
-    font-size: 10px;
-    letter-spacing: .16em;
-    font-weight: 900;
-    color: var(--color-bcd1c9)
-}
 
-.hero-xp-summary strong {
-    font-size: 42px;
-    line-height: 1;
-    margin: 7px 0
-}
 
-.hero-xp-summary>span:not(.hero-xp-label),
-.hero-xp-summary small {
-    color: var(--color-d0e0da)
-}
 
-.hero-progress {
-    height: 9px;
-    margin: 18px 0 7px;
-    border-radius: 999px;
-    background: var(--color-rgba-255-255-255-18);
-    overflow: hidden
-}
 
-.hero-progress i {
-    display: block;
-    height: 100%;
-    border-radius: inherit;
-    background: var(--warm)
-}
+
+
+
+
+
+
+
+
+
+
 
 .quest-overview {
     margin: 34px 0
@@ -1406,58 +1249,23 @@ select {
     font-weight: 800
 }
 
-.trust-strip {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    margin: 20px 0 34px;
-    border: 1px solid var(--border);
-    border-radius: 22px;
-    background: var(--surface);
-    box-shadow: var(--shadow)
-}
 
-.trust-item {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 11px;
-    padding: 19px;
-    border-right: 1px solid var(--border)
-}
 
-.trust-item:last-child {
-    border-right: 0
-}
 
-.trust-item>svg {
-    color: var(--accent)
-}
 
-.trust-item strong,
-.trust-item span {
-    display: block
-}
 
-.trust-item strong {
-    font-size: 12px
-}
 
-.trust-item span {
-    margin-top: 2px;
-    color: var(--muted);
-    font-size: 10px
-}
 
-.player-qr-section {
-    margin: 26px 0
-}
 
-.player-stat-strip {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 12px;
-    margin: 22px 0
-}
+
+
+
+
+
+
+
+
+
 
 .player-stat-strip .card {
     display: grid;
@@ -1484,28 +1292,13 @@ select {
     font-size: 11px
 }
 
-.player-two-col {
-    display: grid;
-    grid-template-columns: 1.05fr .95fr;
-    gap: 16px;
-    margin: 22px 0
-}
 
-.player-next-card,
-.player-progress-card {
-    min-height: 250px
-}
 
-.ready-now-head {
-    display: flex;
-    justify-content: space-between;
-    gap: 15px;
-    align-items: flex-start
-}
 
-.ready-now-title {
-    margin: 5px 0 !important
-}
+
+
+
+
 
 .ready-now-icon {
     width: 50px;
@@ -1517,10 +1310,7 @@ select {
     color: var(--q-orange)
 }
 
-.full-action {
-    width: 100%;
-    margin-top: 18px
-}
+
 
 .progress-wrap {
     margin: 18px 0
@@ -1583,35 +1373,13 @@ select {
     opacity: .62
 }
 
-.text-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    color: var(--accent);
-    font-weight: 850;
-    font-size: 12px
-}
 
-.player-reward-callout {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-    padding: 22px;
-    border-radius: 22px;
-    background: linear-gradient(100deg, var(--tile3), var(--tile2));
-    border: 1px solid var(--border);
-    margin: 22px 0
-}
 
-.player-reward-callout h2 {
-    margin: 4px 0
-}
 
-.mini-activity-grid {
-    display: grid;
-    gap: 10px
-}
+
+
+
+
 
 .mini-activity-grid>.card {
     display: grid;
@@ -1630,41 +1398,17 @@ select {
     color: var(--accent2)
 }
 
-.mini-activity-grid span {
-    display: block;
-    color: var(--muted);
-    font-size: 10px;
-    margin-top: 2px
-}
 
-.player-event-note {
-    display: flex;
-    align-items: center;
-    gap: 11px;
-    margin: 22px 0;
-    padding: 15px 17px;
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    background: var(--tile4)
-}
 
-.player-event-note span {
-    display: block;
-    color: var(--muted);
-    font-size: 11px
-}
 
-.player-map-card {
-    margin-top: 22px
-}
 
-.quest-float {
-    max-height: 250px
-}
 
-.avatar-image,
-.avatar-small img,
-.youth-avatar-link img {
+
+
+
+
+
+.avatar-image{
     display: block;
     object-fit: cover;
     border-radius: 50%
@@ -1954,8 +1698,7 @@ select {
     color: var(--color-fff)
 }
 
-.game-editor-toolbar,
-.ready-now-head {
+.game-editor-toolbar{
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
@@ -2023,18 +1766,9 @@ select {
         grid-template-columns: repeat(2, minmax(0, 1fr))
     }
 
-    .player-hero-new {
-        grid-template-columns: minmax(180px, .7fr) minmax(300px, 1fr)
-    }
+    
 
-    .hero-xp-summary {
-        grid-column: 1/-1;
-        min-height: 0;
-        display: grid;
-        grid-template-columns: auto auto 1fr auto;
-        align-items: center;
-        gap: 10px
-    }
+    
 
     .theme-preset-grid {
         grid-template-columns: repeat(2, 1fr)
@@ -2124,14 +1858,7 @@ select {
         box-shadow: var(--shadow)
     }
 
-    .mobile-sidebar-scrim {
-        display: block;
-        position: fixed;
-        inset: 0;
-        z-index: 95;
-        border: 0;
-        background: var(--color-rgba-17-35-30-35)
-    }
+    
 
     .topbar {
         min-height: 64px;
@@ -2149,9 +1876,7 @@ select {
 
     .grid-2,
     .grid-4,
-    .metric-grid,
-    .player-stat-strip,
-    .player-two-col {
+    .metric-grid{
         grid-template-columns: 1fr
     }
 
@@ -2165,23 +1890,13 @@ select {
         grid-template-columns: 1fr 1fr
     }
 
-    .player-hero-new {
-        grid-template-columns: 1fr;
-        min-height: 0;
-        padding: 20px
-    }
+    
 
-    .player-hero-art {
-        min-height: 180px
-    }
+    
 
-    .player-hero-art img {
-        height: 180px
-    }
+    
 
-    .hero-xp-summary {
-        min-height: 150px
-    }
+    
 
     .quest-feature {
         min-height: 200px
@@ -2220,19 +1935,11 @@ select {
         height: 145px
     }
 
-    .trust-strip {
-        grid-template-columns: 1fr
-    }
+    
 
-    .trust-item {
-        justify-content: flex-start;
-        border-right: 0;
-        border-bottom: 1px solid var(--border)
-    }
+    
 
-    .trust-item:last-child {
-        border-bottom: 0
-    }
+    
 
     .milestone-mini {
         grid-template-columns: repeat(2, 1fr)
@@ -2406,20 +2113,14 @@ select {
     max-width: 1000px
 }
 
-.number-memory-value {
-    background: var(--q-mint);
-    border-radius: 22px;
-    color: var(--q-ink);
-    min-height: 250px
-}
 
-.typing-passage,
-.typing-copy {
+
+.typing-passage{
     background: var(--header) !important;
     border-color: var(--q-border) !important
 }
 
-.form-grid label,
+
 .game-form label {
     display: grid;
     gap: 7px
@@ -2440,31 +2141,20 @@ select {
     box-shadow: var(--q-shadow-lg) !important
 }
 
-.admin-event-card,
-.worker-progress-card {
+.admin-event-card{
     background: var(--tile4) !important
 }
 
-.attention-card {
-    background: var(--tile2) !important;
-    border-color: var(--border) !important
-}
+
 
 /* Public / auth */
 .public-display {
     background: var(--q-paper) !important
 }
 
-.public-header {
-    background: var(--q-ink) !important;
-    color: var(--color-fff);
-    padding: 20px;
-    border-radius: 0 0 26px 26px
-}
 
-.public-big-number {
-    color: var(--q-ink)
-}
+
+
 
 .reset-page {
     min-height: 100vh;
@@ -2472,7 +2162,7 @@ select {
     place-items: center;
     padding: 24px;
     background: var(--q-paper);
-    background-image: url('/quest-media/graphics/map-grid.svg');
+    background-image: url("/quest-media/graphics/map-grid.svg");
     background-size: 520px;
 }
 
@@ -2539,9 +2229,7 @@ select {
     max-width: none
 }
 
-.public-header {
-    border-radius: 0 0 20px 20px
-}
+
 
 .milestone-label {
     font-size: 9px;
@@ -2557,7 +2245,6 @@ select {
 .dropdown,
 .search-select-menu,
 .modal,
-.notification-drawer,
 .pwa-install-prompt {
     background: var(--q-surface) !important;
     color: var(--q-ink) !important;
@@ -2569,7 +2256,6 @@ select {
 .assignment-list,
 .activity-list,
 .audit-list,
-.game-history-list,
 .public-request-list,
 .fulfillment-list,
 .instance-management-list {
@@ -2581,7 +2267,6 @@ select {
 .assignment-row,
 .activity-page-card,
 .audit-row,
-.game-history-card,
 .public-request,
 .instance-row-copy {
     display: flex;
@@ -2594,7 +2279,6 @@ select {
 .assignment-list>*,
 .activity-list>*,
 .audit-list>*,
-.game-history-list>*,
 .public-request-list>*,
 .fulfillment-list>*,
 .instance-management-list>* {
@@ -2607,8 +2291,7 @@ select {
 
 .account-role-tabs,
 .activity-tabs,
-.activity-tabs-dashboard,
-.game-history-tabs {
+.activity-tabs-dashboard{
     display: flex;
     gap: 6px;
     flex-wrap: wrap;
@@ -2617,8 +2300,7 @@ select {
 
 .account-role-tabs button,
 .activity-tabs button,
-.activity-tabs-dashboard button,
-.game-history-tabs button {
+.activity-tabs-dashboard button{
     border: 1px solid var(--border);
     border-radius: 999px;
     background: var(--surface);
@@ -2652,12 +2334,11 @@ select {
     flex: 1
 }
 
-.audit-main,
+
 .audit-card,
 .audit-filters,
 .config-search-card,
-.programme-instances-page,
-.admin-people-groups {
+.programme-instances-page{
     display: grid;
     gap: 14px
 }
@@ -2687,21 +2368,9 @@ select {
     min-width: 36px
 }
 
-.audit-meta,
-.audit-sub {
-    color: var(--muted);
-    font-size: 11px
-}
 
-.audit-code {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 11px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 10px;
-    overflow: auto
-}
+
+
 
 .config-link-grid {
     display: grid;
@@ -2739,9 +2408,7 @@ select {
     gap: 12px
 }
 
-.attention-card {
-    min-height: 120px
-}
+
 
 .participant-card {
     display: flex;
@@ -2784,7 +2451,6 @@ select {
 }
 
 .games-empty,
-.event-empty,
 .instance-page-error,
 .public-program-empty,
 .public-program-error {
@@ -2847,11 +2513,7 @@ select {
     background: var(--surface)
 }
 
-.game-history-actions {
-    display: flex;
-    gap: 7px;
-    flex-wrap: wrap
-}
+
 
 .memory-game,
 .drawing-game,
@@ -2977,44 +2639,17 @@ select {
     gap: 7px
 }
 
-.public-content-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px
-}
 
-.public-stat-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px
-}
 
-.public-stat-grid>div {
-    padding: 13px;
-    border-radius: 14px;
-    background: var(--tile1);
-    display: grid;
-    gap: 3px
-}
 
-.public-stat-grid span,
-.public-riser span {
-    color: var(--muted);
-    font-size: 10px
-}
 
-.public-riser {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--border)
-}
 
-.public-riser:last-child {
-    border-bottom: 0
-}
+
+
+
+
+
+
 
 .rank {
     width: 30px;
@@ -3026,21 +2661,11 @@ select {
     font-weight: 900
 }
 
-.public-event-list {
-    margin-top: 13px
-}
 
-.public-map-locked {
-    display: flex;
-    gap: 10px;
-    align-items: flex-start;
-    padding: 14px;
-    border-radius: 14px;
-    background: var(--tile2)
-}
+
+
 
 .public-program-picker,
-.public-program-toolbar,
 .public-program-options {
     display: flex;
     align-items: center;
@@ -3106,7 +2731,6 @@ select {
 }
 
 .public-points-card,
-.public-points-alert,
 .public-points-privacy,
 .public-points-success {
     border: 1px solid var(--border);
@@ -3336,8 +2960,7 @@ select {
 
     .audit-filters,
     .attention-grid,
-    .config-link-grid,
-    .public-content-grid {
+    .config-link-grid{
         grid-template-columns: 1fr 1fr
     }
 
@@ -3354,9 +2977,7 @@ select {
 
     .audit-filters,
     .attention-grid,
-    .config-link-grid,
-    .public-content-grid,
-    .public-stat-grid {
+    .config-link-grid{
         grid-template-columns: 1fr
     }
 
@@ -3364,7 +2985,6 @@ select {
     .assignment-row,
     .activity-page-card,
     .audit-row,
-    .game-history-card,
     .public-request,
     .instance-row-copy {
         align-items: flex-start;
@@ -3380,9 +3000,7 @@ select {
         grid-template-columns: repeat(3, minmax(55px, 1fr))
     }
 
-    .player-activity-preview {
-        margin-top: 20px
-    }
+    
 }
 
 @media (max-width:480px) {
@@ -3436,15 +3054,9 @@ select {
     color: var(--accent)
 }
 
-.audit-title {
-    display: flex;
-    align-items: center;
-    gap: 9px
-}
 
-.audit-detail {
-    margin: 5px 0 7px
-}
+
+
 
 .event-timeline-row {
     border-bottom: 1px solid var(--border);
@@ -3609,7 +3221,6 @@ select {
 .search-select-menu,
 .public-program-menu,
 .calendar-popover-portal,
-.theme-card,
 .config-link-card,
 .map-address-suggestions {
     box-shadow: var(--shadow)
@@ -3620,14 +3231,12 @@ select {
 .topbar,
 .section-head,
 .page-title,
-.form-grid,
 .grid-2,
 .grid-3,
 .metric-grid,
 .reward-grid,
 .skill-map,
-.participant-grid,
-.public-groups {
+.participant-grid{
     min-width: 0
 }
 
@@ -3738,9 +3347,7 @@ select {
     color: var(--muted)
 }
 
-.calendar-popover-time {
-    margin: 8px 0 0
-}
+
 
 .calendar-popover-actions {
     display: flex;
@@ -3761,9 +3368,7 @@ select {
     gap: 10px
 }
 
-.audit-row-limit {
-    max-width: 90px
-}
+
 
 .reward-grid>.null-card,
 .skill-map>.null-card {
@@ -3844,41 +3449,15 @@ select {
     gap: 12px
 }
 
-.public-title-copy {
-    flex: 1
-}
 
-.public-title-copy h1 {
-    font-size: clamp(22px, 3vw, 34px);
-    margin: 2px 0
-}
 
-.public-live {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding: 8px 11px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    border-radius: 999px;
-    color: var(--muted);
-    font-size: 11px;
-    font-weight: 800
-}
 
-.live-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 10px var(--accent)
-}
 
-.compact-event {
-    max-width: 1300px;
-    width: 100%;
-    margin: 0 auto
-}
+
+
+
+
+
 
 .public-event-list .event-timeline-row {
     padding: 10px 0
@@ -3994,19 +3573,15 @@ select {
 }
 
 .public-program-menu,
-.public-program-trigger,
-.public-live {
+.public-program-trigger{
     background: var(--header);
     color: var(--text)
 }
 
 .public-groups .card:first-child,
-.public-instance-selector select,
 .public-program-trigger,
 .toast,
 .unsaved-bar,
-.player-hero,
-.xp-orb,
 .award-celebration,
 .award-icon,
 .sequence-grid-4x4 .sequence-tile.pressed,
@@ -4025,9 +3600,7 @@ select {
     gap: 12px
 }
 
-.points-result {
-    padding: 12px 16px
-}
+
 
 .points-action-grid {
     display: grid;
@@ -4040,28 +3613,13 @@ select {
     min-width: 0
 }
 
-.game-history-main {
-    display: grid;
-    gap: 4px;
-    min-width: 0
-}
 
-.game-history-main strong,
-.game-history-main span,
-.game-history-main small {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap
-}
 
-.game-history-main span,
-.game-history-main small {
-    color: var(--muted)
-}
 
-.worker-event-card {
-    margin-top: 20px
-}
+
+
+
+
 
 .event-timeline {
     margin-top: 8px
@@ -4150,10 +3708,7 @@ select {
     margin-bottom: 0
 }
 
-.youth-dashboard-v2 {
-    min-height: 100vh;
-    background: radial-gradient(circle at 82% 0%, color-mix(in srgb, var(--accent2) 14%, transparent), transparent 32%), var(--bg)
-}
+
 
 .sequence-grid-4x4 {
     grid-template-columns: repeat(4, 1fr);
@@ -4198,28 +3753,13 @@ select {
     box-shadow: none
 }
 
-.ready-now-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 7px;
-    margin-top: 12px
-}
 
-.qr-preview {
-    display: grid;
-    justify-items: center;
-    gap: 10px;
-    padding: 10px
-}
 
-.qr-preview svg {
-    display: block
-}
 
-.qr-open {
-    font-size: 12px;
-    padding: 9px 12px
-}
+
+
+
+
 
 .points-qr-backdrop {
     z-index: 2147483645
@@ -4325,8 +3865,7 @@ select {
 
 .assignment-summary,
 .assignment-count-button,
-.points-action-grid,
-.points-result {
+.points-action-grid{
     border: 1px solid var(--border);
     border-radius: 16px;
     background: var(--surface);
@@ -4349,24 +3888,16 @@ select {
     padding: 12px
 }
 
-.points-result {
-    padding: 16px
-}
 
-.audit-detail,
-.audit-title {
-    color: var(--text)
-}
+
+
 
 .audit-icon {
     background: var(--tile1);
     color: var(--accent)
 }
 
-.audit-row-limit {
-    color: var(--muted);
-    font-size: 12px
-}
+
 
 .avatar-choice-grid {
     display: grid;
@@ -4491,10 +4022,7 @@ select {
     font-weight: 750
 }
 
-.game-history-main {
-    display: grid;
-    gap: 14px
-}
+
 
 .grid-3 {
     display: grid;
@@ -4522,13 +4050,7 @@ select {
     background: var(--surface)
 }
 
-.live-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--success);
-    box-shadow: 0 0 0 5px color-mix(in srgb, var(--success) 15%, transparent)
-}
+
 
 .milestone-editor {
     display: grid;
@@ -4546,9 +4068,7 @@ select {
     color: var(--text)
 }
 
-.player-personal-bests {
-    margin-top: 22px
-}
+
 
 .player-list-backdrop,
 .points-qr-backdrop,
@@ -4602,9 +4122,7 @@ select {
     pointer-events: none !important
 }
 
-.public-live {
-    color: var(--success)
-}
+
 
 .public-load-error {
     padding: 16px;
@@ -4621,8 +4139,7 @@ select {
     border-radius: 20px
 }
 
-.public-picker-label,
-.public-title-copy {
+.public-picker-label{
     color: var(--text)
 }
 
@@ -4647,18 +4164,9 @@ select {
     padding: 7px 10px
 }
 
-.qr-open {
-    position: relative
-}
 
-.qr-preview {
-    display: grid;
-    place-items: center;
-    padding: 16px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 18px
-}
+
+
 
 .qr-reset-info,
 .qr-security-note {
@@ -4813,7 +4321,7 @@ select {
     gap: 12px
 }
 
-.worker-event-card,
+
 .worker-progress-table {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -4821,17 +4329,13 @@ select {
     color: var(--text)
 }
 
-.worker-event-card {
-    padding: 16px
-}
+
 
 .worker-progress-table {
     overflow: auto
 }
 
-.youth-dashboard-v2 {
-    min-width: 0
-}
+
 
 .success {
     color: var(--success)
