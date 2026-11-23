@@ -3,8 +3,7 @@
 .soft-card,
 .worker-config-page .card,
 .game-editor-card,
-.game-library-card,
-.game-history-card {
+.game-library-card{
   background: color-mix(in srgb, var(--surface) 90%, var(--tile4) 10%);
   border-color: color-mix(in srgb, var(--border) 78%, var(--accent) 22%);
 }
@@ -23,18 +22,18 @@
   box-shadow: 0 14px 36px var(--color-rgba-23-59-50-08);
 }
 
-.worker-dashboard-page .card:nth-of-type(4n+1),
-.worker-config-page .card:nth-of-type(4n+1) {
+.worker-dashboard-page .card:nth-of-type(4n/**/+1),
+.worker-config-page .card:nth-of-type(4n/**/+1) {
   background: color-mix(in srgb, var(--tile1) 78%, var(--surface) 22%)
 }
 
-.worker-dashboard-page .card:nth-of-type(4n+2),
-.worker-config-page .card:nth-of-type(4n+2) {
+.worker-dashboard-page .card:nth-of-type(4n/**/+2),
+.worker-config-page .card:nth-of-type(4n/**/+2) {
   background: color-mix(in srgb, var(--tile2) 72%, var(--surface) 28%)
 }
 
-.worker-dashboard-page .card:nth-of-type(4n+3),
-.worker-config-page .card:nth-of-type(4n+3) {
+.worker-dashboard-page .card:nth-of-type(4n/**/+3),
+.worker-config-page .card:nth-of-type(4n/**/+3) {
   background: color-mix(in srgb, var(--tile3) 72%, var(--surface) 28%)
 }
 
@@ -56,15 +55,15 @@
   overflow: hidden
 }
 
-.skill-node:nth-child(4n+1) {
+.skill-node:nth-child(4n/**/+1) {
   background: color-mix(in srgb, var(--tile1) 74%, var(--surface) 26%)
 }
 
-.skill-node:nth-child(4n+2) {
+.skill-node:nth-child(4n/**/+2) {
   background: color-mix(in srgb, var(--tile2) 74%, var(--surface) 26%)
 }
 
-.skill-node:nth-child(4n+3) {
+.skill-node:nth-child(4n/**/+3) {
   background: color-mix(in srgb, var(--tile3) 74%, var(--surface) 26%)
 }
 
@@ -119,11 +118,7 @@
   padding-right: 4px
 }
 
-.account-row {
-  min-height: 72px;
-  max-height: 96px;
-  overflow: hidden
-}
+
 
 .account-actions {
   display: flex;
@@ -308,46 +303,19 @@
   border: 1px solid color-mix(in srgb, var(--border) 78%, var(--accent) 22%)
 }
 
-.game-history-card .game-history-tabs {
-  margin-bottom: 10px
-}
 
-.game-history-list {
-  max-height: 520px;
-  overflow: auto;
-  display: grid;
-  gap: 8px
-}
 
-.game-history-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 12px;
-  align-items: center;
-  padding: 12px;
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--tile4) 54%, var(--surface) 46%);
-  border: 1px solid var(--border)
-}
 
-.game-history-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 5px
-}
 
-.game-history-row:nth-child(4n+2) {
-  background: color-mix(in srgb, var(--tile1) 54%, var(--surface) 46%)
-}
 
-.game-history-row:nth-child(4n+3) {
-  background: color-mix(in srgb, var(--tile2) 54%, var(--surface) 46%)
-}
 
-.game-history-row:nth-child(4n) {
-  background: color-mix(in srgb, var(--tile3) 54%, var(--surface) 46%)
-}
+
+
+
+
+
+
+
 
 .event-map-wrap {
   position: relative
@@ -398,16 +366,13 @@
   background: var(--tile2)
 }
 
-.number-memory-value {
-  background: var(--tile3)
-}
+
 
 .typing-passage {
   background: var(--tile4)
 }
 
-.error-page,
-.not-found-page {
+.error-page{
   background: transparent
 }
 
@@ -426,13 +391,9 @@
     grid-template-columns: 1fr
   }
 
-  .game-history-row {
-    grid-template-columns: 1fr
-  }
+  
 
-  .game-history-actions {
-    justify-content: flex-start
-  }
+  
 
   .avatar-current-row {
     grid-template-columns: auto 1fr
@@ -468,7 +429,7 @@
   width: fit-content
 }
 
-.attendance-card,
+
 .worker-attendance-card {
   min-width: 0
 }
@@ -489,11 +450,11 @@
   border-radius: 14px
 }
 
-.activity-page-table .activity:nth-child(4n+2) {
+.activity-page-table .activity:nth-child(4n/**/+2) {
   background: color-mix(in srgb, var(--tile1) 42%, var(--surface) 58%)
 }
 
-.activity-page-table .activity:nth-child(4n+3) {
+.activity-page-table .activity:nth-child(4n/**/+3) {
   background: color-mix(in srgb, var(--tile2) 42%, var(--surface) 58%)
 }
 
@@ -510,15 +471,15 @@
   background: color-mix(in srgb, var(--tile4) 48%, var(--surface) 52%)
 }
 
-.worker-config-page .config-collapsible:nth-of-type(4n+1) {
+.worker-config-page .config-collapsible:nth-of-type(4n/**/+1) {
   background: color-mix(in srgb, var(--tile1) 48%, var(--surface) 52%)
 }
 
-.worker-config-page .config-collapsible:nth-of-type(4n+2) {
+.worker-config-page .config-collapsible:nth-of-type(4n/**/+2) {
   background: color-mix(in srgb, var(--tile2) 48%, var(--surface) 52%)
 }
 
-.worker-config-page .config-collapsible:nth-of-type(4n+3) {
+.worker-config-page .config-collapsible:nth-of-type(4n/**/+3) {
   background: color-mix(in srgb, var(--tile3) 48%, var(--surface) 52%)
 }
 
@@ -574,15 +535,13 @@ textarea:focus {
   padding: 9px 12px
 }
 
-.search-select-trigger,
-.multi-search-select-trigger {
+.search-select-trigger{
   background: var(--surface);
   border-color: var(--border);
   color: var(--text)
 }
 
-.search-select-menu,
-.multi-search-select-menu {
+.search-select-menu{
   background: var(--surface)
 }
 
@@ -961,14 +920,9 @@ textarea:focus {
   color: var(--text)
 }
 
-.account-row {
-  grid-template-columns: minmax(150px, 1fr) auto minmax(130px, 170px) minmax(180px, auto);
-  align-items: center
-}
 
-.account-row select {
-  min-width: 130px
-}
+
+
 
 .worker-dashboard-page .worker-attendance-card {
   background: color-mix(in srgb, var(--tile1) 62%, var(--surface))
@@ -1078,7 +1032,7 @@ textarea:focus {
 }
 
 .event-timeline-row summary:after {
-  content: '+';
+  content: "+";
   width: 26px;
   height: 26px;
   display: grid;
@@ -1089,7 +1043,7 @@ textarea:focus {
 }
 
 .event-timeline-row[open] summary:after {
-  content: '−'
+  content: "−"
 }
 
 .event-timeline-details {
@@ -1206,18 +1160,9 @@ textarea:focus {
   border-radius: 18px
 }
 
-.points-qr-data {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px
-}
 
-.points-qr-data>span {
-  padding: 9px;
-  border-radius: 12px;
-  background: var(--surface2);
-  border: 1px solid var(--border)
-}
+
+
 
 .points-qr-modal-actions {
   display: flex;
@@ -1324,90 +1269,38 @@ textarea:focus {
   background: color-mix(in srgb, var(--surface) 48%, transparent)
 }
 
-.game-history-card {
-  position: relative
-}
 
-.game-history-tabs {
-  position: sticky;
-  top: 0;
-  z-index: 3;
-  margin: -4px -4px 12px;
-  padding: 6px;
-  background: color-mix(in srgb, var(--surface) 94%, transparent);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--border);
-  justify-content: flex-start
-}
 
-.game-history-list {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  max-height: 620px;
-  overflow: auto;
-  padding: 2px
-}
 
-.game-history-row {
-  min-width: 0;
-  display: grid;
-  gap: 12px;
-  align-content: space-between;
-  padding: 14px;
-  border: 1px solid var(--border);
-  border-radius: 17px;
-  background: color-mix(in srgb, var(--tile2) 48%, var(--surface))
-}
 
-.game-history-row:nth-child(3n+2) {
-  background: color-mix(in srgb, var(--tile3) 44%, var(--surface))
-}
 
-.game-history-row:nth-child(3n) {
-  background: color-mix(in srgb, var(--tile4) 44%, var(--surface))
-}
 
-.game-history-main {
-  min-width: 0;
-  display: grid;
-  gap: 4px
-}
 
-.game-history-main strong,
-.game-history-main span,
-.game-history-main small {
-  overflow-wrap: anywhere
-}
 
-.game-history-actions {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap
-}
+
+
+
+
+
+
+
+
+
 
 .game-history-actions .button {
   flex: 1 1 auto
 }
 
-.points-result {
-  background: color-mix(in srgb, var(--tile4) 55%, var(--surface))
-}
+
 
 @media(max-width:1000px) {
-  .game-history-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr))
-  }
+  
 }
 
 @media(max-width:650px) {
-  .game-history-list {
-    grid-template-columns: 1fr
-  }
+  
 
-  .game-history-tabs {
-    position: static
-  }
+  
 
   .points-page .grid-2 {
     grid-template-columns: 1fr

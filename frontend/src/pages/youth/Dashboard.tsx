@@ -221,7 +221,7 @@ export function YouthDashboard() {
     ),
   );
   const rewardAvailable = Boolean(data.rewardAvailable);
-  const event = data.currentEvent || data.lastEvent;
+  const event = data.currentEvent || data.nextEvent || data.lastEvent;
   const firstName =
     String(data.profile?.gamertag || "")
       .trim()
@@ -466,7 +466,11 @@ export function YouthDashboard() {
             <strong className="yq-kid-big-number">
               {teamXp.toLocaleString()} <small>XP</small>
             </strong>
-            <p>{team?.name || "Your team"} is stronger together.</p>
+            <p>
+              {team?.rank
+                ? `${team.name} is currently #${team.rank} by average XP per eligible member.`
+                : `${team?.name || "Your team"} is building its progress. Keep going together!`}
+            </p>
             <div
               className="yq-kid-bar"
               role="progressbar"
@@ -478,14 +482,15 @@ export function YouthDashboard() {
               <span style={{ width: `${teamProgress}%` }} />
             </div>
             <div className="yq-kid-bar-labels">
-              <span>Team goal</span>
+              <span>Collective team goal</span>
               <span>{Math.round(teamProgress)}% complete</span>
             </div>
             <div className="yq-kid-next-prize">
               <LockKeyhole size={15} />
               <span>
-                Your team's journey is yours to cheer on. Other teams' scores
-                stay private.
+                {team?.eligibleMembers
+                  ? `Average ${Math.round(Number(team.averageXpPerMember || 0)).toLocaleString()} XP per eligible member · ${team.eligibleMembers} counted.`
+                  : "Your group's competitive ranking appears when it meets the minimum team size."}
               </span>
             </div>
           </article>
@@ -552,7 +557,7 @@ export function YouthDashboard() {
               </span>
               <div>
                 <span className="yq-kid-eyebrow">SHOWING UP IS A WIN</span>
-                <h2>Your streak</h2>
+                <h2>Onsite event attendance</h2>
               </div>
             </div>
             <div className="yq-kid-streak-banner">
@@ -560,12 +565,43 @@ export function YouthDashboard() {
                 <Flame size={30} />
               </div>
               <div>
-                <strong>{data.profile?.streak || 0} day streak</strong>
-                <span>Small steps make a big adventure.</span>
+                <strong>{data.onsiteAttendanceStreak?.current || data.profile?.streak || 0} day check-in streak</strong>
+                <span>
+                  {data.onsiteAttendanceStreak?.hasAttendedToday
+                    ? "Today's event check-in is counted. Great work!"
+                    : "Scan the youth worker's QR code when you arrive at an onsite event."}
+                </span>
               </div>
               <span className="yq-kid-streak-badge">
                 <Zap size={15} /> KEEP IT UP
               </span>
+            </div>
+            <div className="yq-kid-streak-extra">
+              <div>
+                <strong>Daily login</strong>
+                <b>{data.loginStreak?.current || 0} day{data.loginStreak?.current === 1 ? "" : "s"}</b>
+                <span>
+                  {data.loginStreak?.enabled === false
+                    ? "Daily login rewards are currently paused."
+                    : <>
+                        {data.loginStreak?.loggedInToday ? "Today's login reward is counted. " : "Log in today to keep your streak going. "}
+                        {data.loginStreak?.nextMilestone
+                          ? `Next login reward: ${data.loginStreak.nextRewardXp} XP, including a ${data.loginStreak.nextMilestone.bonus_xp} XP bonus in ${data.loginStreak.milestoneWithinDays} more day${data.loginStreak.milestoneWithinDays === 1 ? "" : "s"}.`
+                          : `Keep logging in for ${data.loginStreak?.dailyXp || 0} XP each day!`}
+                      </>}
+                </span>
+              </div>
+              <div>
+                <strong>Event attendance</strong>
+                <b>{data.onsiteAttendanceStreak?.current || 0} day{data.onsiteAttendanceStreak?.current === 1 ? "" : "s"} · {data.onsiteAttendanceStreak?.currentMultiplier || 1}×</b>
+                <span>
+                  {data.onsiteAttendanceStreak?.hasAttendedToday ? "Check-in counted today. " : "Next check-in: "}
+                  {`Next check-in earns ${data.onsiteAttendanceStreak?.nextRewardXp || 0} XP. `}
+                  {data.onsiteAttendanceStreak?.nextMilestone
+                    ? `Reach ${data.onsiteAttendanceStreak.nextMilestone.multiplier}× in ${data.onsiteAttendanceStreak.milestoneWithinDays} more check-in day${data.onsiteAttendanceStreak.milestoneWithinDays === 1 ? "" : "s"}.`
+                    : `Base reward: ${data.onsiteAttendanceStreak?.baseXp || 0} XP.`}
+                </span>
+              </div>
             </div>
             <div className="yq-kid-streak-week">
               <div className="yq-kid-streak-week-head">
@@ -624,7 +660,7 @@ export function YouthDashboard() {
                 </span>
                 <div>
                   <span className="yq-kid-eyebrow">
-                    SOMETHING TO LOOK FORWARD TO
+                    {data.currentEvent ? "HAPPENING NOW" : data.nextEvent ? "UP NEXT · DON'T MISS IT" : "SOMETHING TO LOOK FORWARD TO"}
                   </span>
                   <h2>{event.title}</h2>
                 </div>
@@ -632,6 +668,13 @@ export function YouthDashboard() {
               <p className="yq-kid-panel-description">
                 {event.locationName || t("eventDetails")}
               </p>
+              {(data.currentEvent || data.nextEvent) && (
+                <p className="yq-kid-small-note">
+                  {data.currentEvent
+                    ? "When you arrive, ask a youth worker to show you the attendance QR code and scan it once."
+                    : "Coming up soon — remember to scan the attendance QR code when you arrive to earn your onsite XP."}
+                </p>
+              )}
               <EventMap
                 value={event}
                 events={data.events || []}

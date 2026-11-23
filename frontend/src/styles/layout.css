@@ -29,21 +29,9 @@ a {
   isolation: isolate
 }
 
-.page-graphic {
-  position: absolute;
-  inset: 0 auto auto 0;
-  width: 260px;
-  height: 260px;
-  pointer-events: none;
-  z-index: -1;
-  opacity: .09;
-  background: url('/quest-media/graphics/map-grid.svg') center/contain no-repeat;
-  transform: translate(-34px, -28px)
-}
 
-.page-graphic-map {
-  filter: saturate(.7)
-}
+
+
 
 .card {
   border-radius: var(--q-radius);
@@ -107,9 +95,7 @@ textarea:focus-visible {
 }
 
 .sidebar nav a,
-.sidebar nav button,
-.sidebar-bottom a,
-.sidebar-bottom button {
+.sidebar nav button{
   min-height: 46px;
   border-radius: 14px
 }
@@ -122,16 +108,13 @@ textarea:focus-visible {
   border-radius: 12px
 }
 
-.sidebar-bottom {
-  padding-top: 14px
-}
+
 
 .main {
   min-width: 0
 }
 
-.topbar,
-.youth-shell-bar {
+.topbar{
   min-height: 70px;
   padding: 12px clamp(18px, 3vw, 42px);
   background: color-mix(in srgb, var(--header) 92%, transparent);
@@ -139,20 +122,9 @@ textarea:focus-visible {
   backdrop-filter: blur(16px)
 }
 
-.youth-shell-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  position: sticky;
-  top: 0;
-  z-index: 15
-}
 
-.youth-shell-bar strong {
-  font-size: 20px;
-  letter-spacing: -.03em
-}
+
+
 
 .youth-shell-bar .top-actions {
   margin-left: auto
@@ -443,102 +415,29 @@ textarea:focus-visible {
   background: var(--bg)
 }
 
-.youth-global-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  padding: 28px clamp(18px, 3vw, 48px) 10px;
-  position: relative;
-  z-index: 2
-}
 
-.youth-global-header h1 {
-  margin: 3px 0;
-  font-size: clamp(28px, 4vw, 42px);
-  letter-spacing: -.05em
-}
 
-.youth-global-header p {
-  margin: 0
-}
 
-.youth-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px
-}
 
-.youth-home-v3 {
-  padding-top: 14px
-}
 
-.player-hero-v3 {
-  position: relative;
-  min-height: 390px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(340px, .72fr);
-  align-items: center;
-  gap: 24px;
-  padding: 32px;
-  overflow: hidden;
-  border-radius: 30px;
-  background: linear-gradient(112deg, var(--tile1) 0 54%, var(--surface) 54%);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow)
-}
 
-.player-hero-art-v3 {
-  position: absolute;
-  inset: 0 45% 0 0;
-  overflow: hidden
-}
 
-.player-hero-art-v3 img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: left center;
-  transform: scale(1.12);
-  transform-origin: left center
-}
 
-.player-hero-copy-v3 {
-  position: relative;
-  z-index: 2;
-  grid-column: 2;
-  max-width: 500px;
-  padding: 25px;
-  border-radius: 24px;
-  background: color-mix(in srgb, var(--surface) 91%, transparent);
-  box-shadow: 0 16px 40px var(--color-rgba-23-59-50-10);
-  backdrop-filter: blur(8px)
-}
 
-.hero-streak-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin: 12px 0 4px;
-  padding: 7px 10px;
-  border-radius: 999px;
-  background: var(--tile2);
-  color: var(--text);
-  font-size: 10px;
-  font-weight: 900
-}
 
-.player-hero-copy-v3 h2 {
-  font-size: clamp(32px, 4vw, 52px);
-  line-height: .98;
-  letter-spacing: -.055em;
-  margin: 5px 0 10px
-}
 
-.player-hero-copy-v3 p {
-  max-width: 450px;
-  color: var(--muted)
-}
+
+
+
+
+
+
+
+
+
+
+
+
 
 .dashboard-reveal {
   animation: dashboard-in .55s var(--q-ease) both
@@ -639,18 +538,7 @@ textarea:focus-visible {
   opacity: 1
 }
 
-.xp-progress-panel {
-  display: grid;
-  grid-template-columns: minmax(270px, .72fr) minmax(0, 1.28fr);
-  gap: 26px;
-  align-items: center;
-  margin: 26px 0;
-  padding: 28px;
-  border: 1px solid var(--border);
-  border-radius: 28px;
-  background: linear-gradient(115deg, var(--surface), var(--tile3));
-  box-shadow: var(--shadow)
-}
+
 
 .xp-donut-wrap {
   position: relative;
@@ -683,11 +571,7 @@ textarea:focus-visible {
   transition: stroke-dashoffset .8s var(--q-ease)
 }
 
-.xp-milestone-dot {
-  fill: var(--donut-milestone);
-  stroke: var(--surface);
-  stroke-width: 3
-}
+
 
 .xp-milestone-dot.done {
   fill: var(--donut-achievement)
@@ -717,48 +601,19 @@ textarea:focus-visible {
   font-size: 13px
 }
 
-.xp-progress-copy h2 {
-  font-size: clamp(28px, 3vw, 40px);
-  margin: 4px 0
-}
 
-.xp-progress-copy>p {
-  max-width: 620px;
-  color: var(--muted)
-}
 
-.xp-progress-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 9px;
-  margin: 20px 0
-}
 
-.xp-progress-stats>div {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px;
-  border-radius: 15px;
-  background: var(--surface);
-  border: 1px solid var(--border)
-}
 
-.xp-progress-stats svg {
-  color: var(--accent);
-  flex: 0 0 auto
-}
 
-.xp-progress-stats span {
-  font-size: 10px;
-  color: var(--muted)
-}
 
-.xp-progress-stats b {
-  display: block;
-  color: var(--text);
-  font-size: 12px
-}
+
+
+
+
+
+
+
 
 .xp-next-reward {
   display: flex;
@@ -802,65 +657,27 @@ textarea:focus-visible {
   color: var(--muted)
 }
 
-.dashboard-stat-cards {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-  margin: 22px 0
-}
 
-.stat-card {
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  min-height: 110px
-}
 
-.stat-card svg {
-  flex: 0 0 auto
-}
 
-.stat-card strong {
-  display: block;
-  font-size: 26px;
-  letter-spacing: -.04em
-}
 
-.stat-card span {
-  display: block;
-  margin-top: 3px;
-  font-size: 10px;
-  color: var(--muted);
-  font-weight: 800
-}
 
-.stat-card-mint {
-  background: var(--tile1)
-}
 
-.stat-card-sun {
-  background: var(--tile2)
-}
 
-.stat-card-lilac {
-  background: var(--tile3)
-}
 
-.stat-card-aqua {
-  background: var(--tile4)
-}
 
-.dashboard-columns {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin: 22px 0
-}
 
-.next-challenge-card,
-.records-card {
-  min-height: 320px
-}
+
+
+
+
+
+
+
+
+
+
+
 
 .card-action-icon {
   width: 50px;
@@ -925,9 +742,7 @@ textarea:focus-visible {
   color: var(--accent)
 }
 
-.records-card .text-link {
-  margin-top: 15px
-}
+
 
 .reward-banner {
   display: flex;
@@ -951,13 +766,9 @@ textarea:focus-visible {
   color: var(--muted)
 }
 
-.dashboard-event-card {
-  margin: 22px 0
-}
 
-.dashboard-qr-minimized {
-  margin: 26px 0 8px
-}
+
+
 
 .points-qr-collapsed {
   padding: 0;
@@ -1007,36 +818,15 @@ textarea:focus-visible {
   transform: rotate(180deg)
 }
 
-.points-qr-expanded {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 20px;
-  padding: 0 17px 17px;
-  border-top: 1px solid var(--border);
-  align-items: center
-}
 
-.points-qr-expanded>div:first-child {
-  display: flex;
-  align-items: center;
-  gap: 12px
-}
 
-.points-qr-expanded p {
-  max-width: 520px;
-  margin: 0
-}
 
-.qr-preview-mini {
-  display: grid;
-  justify-items: center;
-  gap: 8px
-}
 
-.qr-preview-mini svg {
-  background: var(--color-fff);
-  border-radius: 8px
-}
+
+
+
+
+
 
 /* notification feed */
 .notification-feed {
@@ -1105,9 +895,7 @@ textarea:focus-visible {
   font-size: 9px
 }
 
-.notification-card-arrow {
-  color: var(--muted)
-}
+
 
 .notification-unread {
   border-left: 4px solid var(--accent)
@@ -1176,25 +964,9 @@ textarea:focus-visible {
   font-size: 10px
 }
 
-.public-live {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 10px;
-  border-radius: 999px;
-  background: var(--tile1);
-  font-size: 9px;
-  font-weight: 950
-}
 
-.public-live i {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 14%, transparent);
-  animation: pulse-live 1.8s infinite
-}
+
+
 
 @keyframes pulse-live {
   50% {
@@ -1228,67 +1000,27 @@ textarea:focus-visible {
   color: var(--muted)
 }
 
-.public-hero-donut {
-  display: flex;
-  align-items: center;
-  gap: 15px
-}
 
-.public-donut {
-  position: relative;
-  width: 130px;
-  height: 130px
-}
 
-.public-donut svg {
-  width: 100%;
-  height: 100%;
-  transform: rotate(-90deg)
-}
 
-.public-donut-track,
-.public-donut-progress {
-  fill: none;
-  stroke-width: 13
-}
 
-.public-donut-track {
-  stroke: var(--donut-track)
-}
 
-.public-donut-progress {
-  stroke: var(--accent);
-  stroke-linecap: round
-}
 
-.public-donut>div {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-content: center;
-  text-align: center
-}
 
-.public-donut strong {
-  font-size: 22px
-}
 
-.public-donut span {
-  font-size: 8px;
-  color: var(--muted);
-  font-weight: 800
-}
 
-.public-hero-donut>div:last-child strong,
-.public-hero-donut>div:last-child span {
-  display: block
-}
 
-.public-hero-donut>div:last-child span {
-  margin-top: 3px;
-  color: var(--muted);
-  font-size: 9px
-}
+
+
+
+
+
+
+
+
+
+
+
 
 .public-v3-stats {
   display: grid;
@@ -1339,38 +1071,15 @@ textarea:focus-visible {
   min-height: 210px
 }
 
-.public-bars {
-  display: grid;
-  gap: 10px
-}
 
-.public-bar-row>div {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  font-size: 9px
-}
 
-.public-bar-row b {
-  color: var(--muted)
-}
 
-.public-bar-row>i {
-  display: block;
-  height: 8px;
-  margin-top: 4px;
-  border-radius: 99px;
-  background: var(--surface2);
-  overflow: hidden
-}
 
-.public-bar-row>i em {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, var(--accent), var(--accent2));
-  animation: bar-in .7s var(--q-ease) both
-}
+
+
+
+
+
 
 @keyframes bar-in {
   from {
@@ -1378,77 +1087,25 @@ textarea:focus-visible {
   }
 }
 
-.public-riser-v3 {
-  position: relative;
-  display: grid;
-  grid-template-columns: 28px 1fr auto;
-  align-items: center;
-  gap: 9px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--border)
-}
 
-.public-riser-v3>span {
-  width: 26px;
-  height: 26px;
-  display: grid;
-  place-items: center;
-  border-radius: 8px;
-  background: var(--tile2);
-  font-size: 9px;
-  font-weight: 950
-}
 
-.public-riser-v3 strong,
-.public-riser-v3 small {
-  display: block
-}
 
-.public-riser-v3 strong {
-  font-size: 10px
-}
 
-.public-riser-v3 small {
-  color: var(--muted);
-  font-size: 8px
-}
 
-.public-riser-v3>b {
-  font-size: 9px;
-  color: var(--accent)
-}
 
-.public-riser-v3>i {
-  position: absolute;
-  left: 37px;
-  right: 0;
-  bottom: 0;
-  height: 2px;
-  background: var(--accent2);
-  transform-origin: left;
-  animation: bar-in .8s var(--q-ease) both
-}
 
-.public-event-preview {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 22px;
-  border-radius: 18px;
-  background: var(--tile4);
-  border: 1px solid var(--border)
-}
 
-.public-event-preview strong,
-.public-event-preview span {
-  display: block
-}
 
-.public-event-preview span {
-  margin-top: 4px;
-  color: var(--muted);
-  font-size: 10px
-}
+
+
+
+
+
+
+
+
+
+
 
 .public-v3-footer {
   display: flex;
@@ -1526,30 +1183,11 @@ textarea:focus-visible {
   background: var(--tile4)
 }
 
-.animated-stat-chart {
-  margin: 16px 0;
-  padding: 20px;
-  border: 1px solid var(--border);
-  border-radius: 22px;
-  background: var(--surface)
-}
 
-.stat-wave {
-  height: 150px;
-  display: flex;
-  align-items: flex-end;
-  gap: 7px;
-  padding: 12px 4px
-}
 
-.stat-wave i {
-  flex: 1;
-  max-width: 34px;
-  border-radius: 7px 7px 3px 3px;
-  background: linear-gradient(180deg, var(--accent2), var(--accent));
-  animation: wave-in .8s var(--q-ease) both;
-  transform-origin: bottom
-}
+
+
+
 
 @keyframes wave-in {
   from {
@@ -1557,21 +1195,9 @@ textarea:focus-visible {
   }
 }
 
-.stat-wave-labels {
-  display: flex;
-  justify-content: space-between;
-  color: var(--muted);
-  font-size: 9px
-}
 
-.admin-stats-link {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  margin-top: 18px;
-  background: linear-gradient(105deg, var(--tile3), var(--surface))
-}
+
+
 
 /* toggles and collapsibles */
 .switch-row {
@@ -1670,21 +1296,15 @@ textarea:focus-visible {
     width: 218px
   }
 
-  .player-hero-v3 {
-    grid-template-columns: 1fr minmax(320px, .76fr)
-  }
+  
 
   .quest-feature-grid {
     grid-template-columns: repeat(2, 1fr)
   }
 
-  .xp-progress-panel {
-    grid-template-columns: 280px 1fr
-  }
+  
 
-  .dashboard-stat-cards {
-    grid-template-columns: repeat(2, 1fr)
-  }
+  
 
   .public-v3-grid {
     grid-template-columns: 1fr
@@ -1750,8 +1370,7 @@ textarea:focus-visible {
     padding-bottom: 74px
   }
 
-  .mobile-sidebar-toggle,
-  .mobile-sidebar-scrim {
+  .mobile-sidebar-toggle{
     display: none
   }
 
@@ -1766,41 +1385,21 @@ textarea:focus-visible {
     display: none
   }
 
-  .youth-shell-bar {
-    min-height: 58px;
-    padding: 9px 14px
-  }
+  
 
   .page {
     padding: 20px 14px 42px
   }
 
-  .player-hero-v3 {
-    min-height: 520px;
-    grid-template-columns: 1fr;
-    padding: 18px;
-    background: var(--tile1);
-    align-items: end
-  }
+  
 
-  .player-hero-art-v3 {
-    inset: 0 0 44% 0
-  }
+  
 
-  .player-hero-art-v3 img {
-    transform: scale(1.02);
-    object-position: left 28%
-  }
+  
 
-  .player-hero-copy-v3 {
-    grid-column: 1;
-    max-width: none;
-    padding: 19px
-  }
+  
 
-  .player-hero-copy-v3 h2 {
-    font-size: 35px
-  }
+  
 
   .quest-feature-grid {
     grid-template-columns: 1fr 1fr
@@ -1835,33 +1434,22 @@ textarea:focus-visible {
     margin-right: 38%
   }
 
-  .xp-progress-panel {
-    grid-template-columns: 1fr;
-    gap: 8px;
-    padding: 20px
-  }
+  
 
   .xp-donut-wrap {
     min-height: 230px
   }
 
-  .xp-progress-stats {
-    grid-template-columns: 1fr
-  }
+  
 
-  .dashboard-stat-cards,
-  .dashboard-columns {
-    grid-template-columns: 1fr
-  }
+  
 
   .reward-banner {
     align-items: flex-start;
     flex-direction: column
   }
 
-  .points-qr-expanded {
-    grid-template-columns: 1fr
-  }
+  
 
   .notification-card {
     grid-template-columns: auto 1fr auto
@@ -1891,9 +1479,7 @@ textarea:focus-visible {
     padding: 20px
   }
 
-  .public-hero-donut {
-    justify-content: flex-start
-  }
+  
 
   .public-v3-stats {
     grid-template-columns: 1fr 1fr
@@ -1909,25 +1495,15 @@ textarea:focus-visible {
 }
 
 @media (max-width:480px) {
-  .player-hero-v3 {
-    min-height: 490px
-  }
+  
 
-  .player-hero-art-v3 {
-    inset: 0 0 48% 0
-  }
+  
 
-  .player-hero-copy-v3 h2 {
-    font-size: 32px
-  }
+  
 
-  .youth-global-header {
-    padding: 20px 14px 6px
-  }
+  
 
-  .youth-global-header h1 {
-    font-size: 28px
-  }
+  
 
   .public-v3-stats {
     grid-template-columns: 1fr 1fr
@@ -1941,10 +1517,7 @@ textarea:focus-visible {
     grid-template-columns: 1fr
   }
 
-  .admin-stats-link {
-    align-items: flex-start;
-    flex-direction: column
-  }
+  
 }
 
 @media (prefers-reduced-motion:reduce) {
@@ -2011,9 +1584,6 @@ body,
 
 .card,
 .metric-grid>*,
-.worker-dashboard-card,
-.admin-dashboard-card,
-.profile-card,
 .notification-card,
 .public-v3-grid>.card {
   background: var(--surface);

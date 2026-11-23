@@ -4,7 +4,16 @@ import uuid
 from django.utils import timezone
 
 def default_streak_rules():
-    return [{'days':3,'multiplier':1.3},{'days':7,'multiplier':1.5},{'days':14,'multiplier':2.0}]
+    return [{'events':2,'multiplier':1.2},{'events':4,'multiplier':1.5},{'events':6,'multiplier':1.8}]
+
+def default_event_streak_rules():
+    return default_streak_rules()
+
+def default_login_reward_config():
+    return {'enabled': True, 'daily_xp': 10, 'milestones': [{'days': 2, 'bonus_xp': 20}, {'days': 3, 'bonus_xp': 30}, {'days': 5, 'bonus_xp': 75}, {'days': 7, 'bonus_xp': 150}], 'timezone': 'Europe/London'}
+
+def default_group_scoring_config():
+    return {'minimum_group_size': 2, 'ranking_periods': ['weekly', 'monthly', 'overall']}
 
 class Profile(models.Model):
     ROLE_CHOICES=[('youth','Young Person'),('worker','Youth Worker'),('admin','Admin')]
@@ -42,6 +51,8 @@ class Programme(models.Model):
     max_worker_points=models.PositiveIntegerField(default=100)
     attendance_points=models.PositiveIntegerField(default=25)
     streak_rules=models.JSONField(default=default_streak_rules, blank=True)
+    login_reward_config=models.JSONField(default=default_login_reward_config, blank=True)
+    group_scoring_config=models.JSONField(default=default_group_scoring_config, blank=True)
     attendance_attention_days=models.PositiveIntegerField(default=7)
     points_attention_days=models.PositiveIntegerField(default=7)
     attention_grace_days=models.PositiveIntegerField(default=3)
@@ -67,7 +78,54 @@ class Group(models.Model):
     xp=models.IntegerField(default=0)
     # Keep the model in sync with migration 0048; this field is used by group tier APIs.
     tier_targets=models.JSONField(default=list,blank=True)
+    # XP earned before contribution-ledger rollout is preserved as an opening balance.
+    historical_xp=models.PositiveBigIntegerField(default=0)
+    include_inactive_members=models.BooleanField(default=False)
     members=models.ManyToManyField(Profile,related_name='groups',blank=True)
+
+    def save(self, *args, **kwargs):
+        # Preserve explicitly seeded/imported opening totals on new groups.
+        if self._state.adding and int(self.xp or 0) > 0 and int(self.historical_xp or 0) == 0:
+            self.historical_xp = int(self.xp)
+        super().save(*args, **kwargs)
+
+
+class GroupMembership(models.Model):
+    STATUS_CHOICES=[('active','Active'),('inactive','Inactive'),('transferred','Transferred'),('withdrawn','Withdrawn')]
+    group=models.ForeignKey(Group,on_delete=models.CASCADE,related_name='membership_history')
+    profile=models.ForeignKey(Profile,on_delete=models.CASCADE,related_name='group_membership_history')
+    status=models.CharField(max_length=20,choices=STATUS_CHOICES,default='active')
+    joined_at=models.DateTimeField(default=timezone.now)
+    left_at=models.DateTimeField(null=True,blank=True)
+    changed_by=models.ForeignKey(User,on_delete=models.SET_NULL,null=True,blank=True,related_name='group_membership_changes')
+    reason=models.CharField(max_length=240,blank=True)
+    created_at=models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints=[models.UniqueConstraint(fields=['group','profile'],condition=models.Q(status='active'),name='unique_active_group_membership')]
+        indexes=[models.Index(fields=['profile','joined_at','left_at'],name='core_gm_profile_dates_idx')]
+
+
+class GroupScoringPolicyHistory(models.Model):
+    group=models.ForeignKey(Group,on_delete=models.CASCADE,related_name='scoring_policy_history')
+    include_inactive_members=models.BooleanField(default=False)
+    effective_from=models.DateTimeField(default=timezone.now)
+    changed_by=models.ForeignKey(User,on_delete=models.SET_NULL,null=True,blank=True,related_name='group_scoring_policy_changes')
+    created_at=models.DateTimeField(auto_now_add=True)
+    class Meta:
+        constraints=[models.UniqueConstraint(fields=['group','effective_from'],name='unique_group_scoring_policy_time')]
+        ordering=['effective_from','id']
+
+
+class GroupXPContribution(models.Model):
+    group=models.ForeignKey(Group,on_delete=models.PROTECT,related_name='xp_contributions')
+    transaction=models.ForeignKey('XPTransaction',on_delete=models.PROTECT,related_name='group_contributions')
+    amount=models.IntegerField()
+    created_at=models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints=[models.UniqueConstraint(fields=['group','transaction'],name='unique_group_xp_contribution')]
+        indexes=[models.Index(fields=['group','created_at'],name='core_groupxp_group_date_idx')]
 
 class GroupTierUnlock(models.Model):
     group=models.ForeignKey(Group,on_delete=models.CASCADE,related_name='tier_unlocks')
@@ -217,10 +275,35 @@ class PushSubscription(models.Model):
     updated_at=models.DateTimeField(auto_now=True)
 
 class AttendanceSession(models.Model):
-    programme=models.ForeignKey(Programme,on_delete=models.CASCADE); created_by=models.ForeignKey(User,on_delete=models.PROTECT,related_name='attendance_sessions'); token=models.CharField(max_length=64,unique=True); expires_at=models.DateTimeField(); active=models.BooleanField(default=True); created_at=models.DateTimeField(auto_now_add=True)
+    programme=models.ForeignKey(Programme,on_delete=models.CASCADE)
+    event=models.ForeignKey('MapEvent',on_delete=models.PROTECT,related_name='qr_sessions',null=True,blank=True)
+    created_by=models.ForeignKey(User,on_delete=models.PROTECT,related_name='attendance_sessions')
+    token=models.CharField(max_length=64,unique=True)
+    expires_at=models.DateTimeField()
+    active=models.BooleanField(default=True)
+    created_at=models.DateTimeField(auto_now_add=True)
 class Attendance(models.Model):
     session=models.ForeignKey(AttendanceSession,on_delete=models.CASCADE); participant=models.ForeignKey(Profile,on_delete=models.CASCADE,related_name='attendances'); attended_at=models.DateTimeField(auto_now_add=True); attendance_date=models.DateField(default=timezone.localdate)
     class Meta: constraints=[models.UniqueConstraint(fields=['session','participant'],name='unique_attendance_scan'),models.UniqueConstraint(fields=['participant','attendance_date'],name='unique_daily_attendance')]
+
+class DailyLogin(models.Model):
+    profile=models.ForeignKey(Profile,on_delete=models.CASCADE,related_name='daily_logins')
+    programme=models.ForeignKey(Programme,on_delete=models.CASCADE,related_name='daily_logins')
+    local_date=models.DateField()
+    created_at=models.DateTimeField(auto_now_add=True)
+    class Meta:
+        constraints=[models.UniqueConstraint(fields=['profile','local_date'],name='unique_profile_daily_login')]
+        indexes=[models.Index(fields=['profile','local_date'],name='core_daily_profile_date_idx')]
+
+class LoginStreakAward(models.Model):
+    profile=models.ForeignKey(Profile,on_delete=models.CASCADE,related_name='login_streak_awards')
+    programme=models.ForeignKey(Programme,on_delete=models.CASCADE,related_name='login_streak_awards')
+    streak_start=models.DateField()
+    threshold=models.PositiveSmallIntegerField()
+    bonus_xp=models.PositiveIntegerField()
+    awarded_at=models.DateTimeField(auto_now_add=True)
+    class Meta:
+        constraints=[models.UniqueConstraint(fields=['profile','programme','streak_start','threshold'],name='unique_login_streak_milestone') ]
 
 class MapEvent(models.Model):
     STATUS_CHOICES=[('scheduled','Scheduled'),('current','Current'),('ended','Ended'),('cancelled','Cancelled')]
@@ -238,6 +321,31 @@ class MapEvent(models.Model):
     status=models.CharField(max_length=20,choices=STATUS_CHOICES,default='scheduled')
     visible=models.BooleanField(default=True)
     pin_enabled=models.BooleanField(default=True)
+
+
+class EventCheckIn(models.Model):
+    """One verified attendance outcome per young person and programme event.
+
+    QR scans are the normal source. Admin corrections are explicit, reasoned
+    records and never rewrite the original QR or XP transaction history.
+    """
+    SOURCE_CHOICES=[('qr','QR scan'),('admin','Admin correction')]
+    event=models.ForeignKey(MapEvent,on_delete=models.PROTECT,related_name='check_ins')
+    participant=models.ForeignKey(Profile,on_delete=models.PROTECT,related_name='event_check_ins')
+    source=models.CharField(max_length=12,choices=SOURCE_CHOICES,default='qr')
+    checked_in_at=models.DateTimeField(default=timezone.now)
+    verified_by=models.ForeignKey(User,on_delete=models.PROTECT,related_name='event_check_ins_verified')
+    streak_count=models.PositiveIntegerField(default=1)
+    multiplier=models.DecimalField(max_digits=5,decimal_places=2,default=1)
+    awarded_xp=models.PositiveIntegerField(default=0)
+    correction_reason=models.CharField(max_length=240,blank=True)
+    corrected_by=models.ForeignKey(User,on_delete=models.PROTECT,null=True,blank=True,related_name='event_check_ins_corrected')
+    voided_at=models.DateTimeField(null=True,blank=True)
+    voided_by=models.ForeignKey(User,on_delete=models.PROTECT,null=True,blank=True,related_name='voided_event_check_ins')
+    created_at=models.DateTimeField(auto_now_add=True)
+    class Meta:
+        constraints=[models.UniqueConstraint(fields=['event','participant'],name='unique_event_qr_checkin')]
+        indexes=[models.Index(fields=['participant','checked_in_at'],name='core_eventcheck_profile_idx')]
 
 
 class AuditLog(models.Model):

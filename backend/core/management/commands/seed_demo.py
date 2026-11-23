@@ -16,7 +16,9 @@ class Command(BaseCommand):
    elif username == 'alex': p.notifications_opt_in=True
    p.save()
    ProgrammeMembership.objects.get_or_create(user=u,programme=prog)
-  group,_=Group.objects.get_or_create(name='Trailblazers',programme=prog,defaults={'tier_targets':[]}); group.xp=18200;group.save();group.members.add(Profile.objects.get(user__username='alex'))
+  group,_=Group.objects.get_or_create(name='Trailblazers',programme=prog,defaults={'tier_targets':[],'xp':18200,'historical_xp':18200});
+  if group.historical_xp == 0 and group.xp: group.historical_xp=group.xp; group.save(update_fields=['historical_xp'])
+  group.members.add(Profile.objects.get(user__username='alex'))
   for n,d,r in [('First Spark','Complete your first challenge',100),('Community Builder','Help the group move forward',250),('Creative Explorer','Try a new skill',150)]:
    b,_=Badge.objects.get_or_create(name=n,defaults={'description':d,'icon':'sparkles'}); ProfileBadge.objects.get_or_create(profile=Profile.objects.get(user__username='alex'),badge=b)
   for n,d,r in [('Make a Mark','Create something original',50),('Team Player','Support a group activity',75),('Try Something New','Complete a new challenge',100)]:

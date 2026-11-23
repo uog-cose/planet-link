@@ -20,12 +20,12 @@ from django.utils import timezone
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from core.config import CONFIG
-from core.services import award_xp, attendance_reward, attendance_streak_multiplier, create_notification
+from core.services import award_xp, attendance_streak_multiplier, event_attendance_streak, create_notification, programme_local_date
 
 from core.models import (
     Attendance, AttendanceSession, AuditLog, Challenge, DrawingSubmission,
     Badge, Group, MapEvent, Notification, Profile, ProfileBadge, ProfileSkill, Programme, ProgrammeMembership,
-    RefreshToken, Reward, RewardAssignment, ScratchClaim, Skill, SkillMilestone, XPTransaction, PasswordResetQr, PointsQrToken, GameAssignment, GameAttempt, PointAwardRequest, PublicPointRequest, PushSubscription, SkillAssignment, RewardFulfillment, NotificationSound,
+    RefreshToken, Reward, RewardAssignment, ScratchClaim, Skill, SkillMilestone, XPTransaction, EventCheckIn, PasswordResetQr, PointsQrToken, GameAssignment, GameAttempt, PointAwardRequest, PublicPointRequest, PushSubscription, SkillAssignment, RewardFulfillment, NotificationSound, DailyLogin, LoginStreakAward, GroupMembership, GroupXPContribution, GroupScoringPolicyHistory,
 )
 
 REFRESH_COOKIE = "yq_refresh"
@@ -49,19 +49,10 @@ def set_refresh_cookie(response, raw, persistent=True):
     return response
 
 def current_attendance_streak(profile):
-    programme_id = getattr(profile, 'programme_id', None)
-    if not programme_id:
+    if not profile or not profile.programme_id:
         return 0
-    dates=set(profile.attendances.filter(session__programme_id=programme_id).values_list('attended_at__date',flat=True))
-    if not dates:return 0
-    latest=max(dates)
-    today=timezone.localdate()
-    if latest < today - timedelta(days=1):return 0
-    streak=0; cursor=latest
-    while cursor in dates:
-        streak += 1
-        cursor -= timedelta(days=1)
-    return streak
+    return event_attendance_streak(profile, profile.programme)
+
 
 def needs_attention_for(profile, programme):
     now=timezone.now()
@@ -109,7 +100,7 @@ def active_programme_for(profile=None):
 def token_hash(raw):
     return hashlib.sha256(raw.encode()).hexdigest()
 
-def event_payload(event, include_map=True):
+def event_payload(event, include_map=True, include_attendance_config=False):
     if not event: return None
     now=timezone.now()
     status=event.status
@@ -117,7 +108,7 @@ def event_payload(event, include_map=True):
         if event.ended_at or (event.end_at and event.end_at<=now): status='ended'
         elif event.start_at and event.start_at>now: status='scheduled'
         else: status='current'
-    payload={'id':event.id,'title':event.title,'description':event.description,'locationName':event.location_name,'postcode':event.postcode,'address':event.address,'startAt':event.start_at,'endAt':event.end_at,'endedAt':event.ended_at,'status':status,'pinEnabled':event.pin_enabled,'visible':event.visible}
+    payload={'id':event.id,'title':event.title,'description':event.description,'locationName':event.location_name,'postcode':event.postcode,'address':event.address,'startAt':event.start_at,'endAt':event.end_at,'endedAt':event.ended_at,'status':status,'pinEnabled':event.pin_enabled,'visible':event.visible,'qrCheckInRequired':True}
     if include_map:
         payload.update({'lat':event.lat,'lng':event.lng,'directionsUrl':f'https://www.google.com/maps/dir/?api=1&destination={event.lat},{event.lng}'})
     return payload

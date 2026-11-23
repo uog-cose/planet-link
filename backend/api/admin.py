@@ -113,6 +113,8 @@ def admin_instances(request):
                 milestones=json.loads(json.dumps(source.milestones or [])),
                 max_worker_points=source.max_worker_points, attendance_points=source.attendance_points,
                 streak_rules=json.loads(json.dumps(source.streak_rules or [])),
+                login_reward_config=json.loads(json.dumps(source.login_reward_config or {})),
+                group_scoring_config=json.loads(json.dumps(source.group_scoring_config or {})),
                 attendance_attention_days=source.attendance_attention_days,
                 points_attention_days=source.points_attention_days,
                 attention_grace_days=source.attention_grace_days,
@@ -352,7 +354,7 @@ def admin_config(request):
             programme = requested
 
         updates = {}
-        for field in ['name','location','theme','target_xp','starts','ends','theme_config','milestones','max_worker_points','attendance_points','streak_rules','attendance_attention_days','points_attention_days','attention_grace_days','notification_retention_days','public_config','public_enabled','status','active']:
+        for field in ['name','location','theme','target_xp','starts','ends','theme_config','milestones','max_worker_points','attendance_points','streak_rules','login_reward_config','group_scoring_config','attendance_attention_days','points_attention_days','attention_grace_days','notification_retention_days','public_config','public_enabled','status','active']:
             if field in body:
                 updates[field] = body[field]
         if 'status' in updates:
@@ -430,15 +432,51 @@ def admin_config(request):
             cleaned_rules = []
             for rule in streak_rules[:30]:
                 if not isinstance(rule, dict): raise ValueError
-                days = int(rule.get('days', 0) or 0)
+                events = int(rule.get('events', rule.get('days', 0)) or 0)
                 multiplier = float(rule.get('multiplier', 1) or 1)
-                if not 1 <= days <= 365 or not 1 <= multiplier <= 10: raise ValueError
-                cleaned_rules.append({'days': days, 'multiplier': multiplier})
+                if not 1 <= events <= 365 or not 1 <= multiplier <= 10: raise ValueError
+                cleaned_rules.append({'events': events, 'multiplier': multiplier})
         except (TypeError, ValueError):
             return ok({'detail':'Streak rules need positive day thresholds and multipliers between 1 and 10'},400)
-        streak_days = [x['days'] for x in cleaned_rules]
-        if len(set(streak_days)) != len(streak_days) or streak_days != sorted(streak_days):
-            return ok({'detail':'Streak day thresholds must be strictly ascending and unique'},400)
+        streak_events = [x['events'] for x in cleaned_rules]
+        if len(set(streak_events)) != len(streak_events) or streak_events != sorted(streak_events):
+            return ok({'detail':'Consecutive event thresholds must be strictly ascending and unique'},400)
+
+        login_config = updates.get('login_reward_config', programme.login_reward_config)
+        try:
+            if not isinstance(login_config, dict): raise ValueError
+            enabled = login_config.get('enabled', True)
+            if not isinstance(enabled, bool): raise ValueError
+            daily_xp = int(login_config.get('daily_xp', 10))
+            if not 0 <= daily_xp <= 5000: raise ValueError
+            timezone_name = str(login_config.get('timezone') or 'Europe/London')
+            from zoneinfo import ZoneInfo
+            ZoneInfo(timezone_name)
+            raw_milestones = login_config.get('milestones', [])
+            if not isinstance(raw_milestones, list) or len(raw_milestones) > 30: raise ValueError
+            cleaned_milestones = []
+            for rule in raw_milestones:
+                if not isinstance(rule, dict): raise ValueError
+                days = int(rule.get('days', 0)); bonus = int(rule.get('bonus_xp', 0))
+                if not 1 <= days <= 365 or not 0 <= bonus <= 50000: raise ValueError
+                cleaned_milestones.append({'days': days, 'bonus_xp': bonus})
+            cleaned_milestones.sort(key=lambda x: x['days'])
+            milestone_days = [x['days'] for x in cleaned_milestones]
+            if len(set(milestone_days)) != len(milestone_days): raise ValueError
+            login_config = {'enabled': enabled, 'daily_xp': daily_xp, 'milestones': cleaned_milestones, 'timezone': timezone_name}
+        except (TypeError, ValueError, KeyError):
+            return ok({'detail':'Login rewards require a valid enabled flag, daily XP (0–5000), timezone and unique ascending milestone thresholds with bonus XP (0–50000).'},400)
+
+        group_scoring_config = updates.get('group_scoring_config', programme.group_scoring_config)
+        try:
+            if not isinstance(group_scoring_config, dict): raise ValueError
+            minimum_group_size = int(group_scoring_config.get('minimum_group_size', 2))
+            if not 1 <= minimum_group_size <= 100: raise ValueError
+            periods = group_scoring_config.get('ranking_periods', ['weekly', 'monthly', 'overall'])
+            if not isinstance(periods, list) or not periods or any(x not in {'weekly', 'monthly', 'overall'} for x in periods): raise ValueError
+            group_scoring_config = {'minimum_group_size': minimum_group_size, 'ranking_periods': list(dict.fromkeys(periods))}
+        except (TypeError, ValueError):
+            return ok({'detail':'Group scoring requires a minimum group size from 1 to 100 and valid weekly, monthly or overall ranking periods.'},400)
 
         windows = {}
         for field in ['attendance_attention_days','points_attention_days','attention_grace_days','notification_retention_days']:
@@ -457,11 +495,13 @@ def admin_config(request):
         programme.public_map_token = map_token
         programme.public_map_token_expires_at = map_expiry
         programme.streak_rules = cleaned_rules
+        programme.login_reward_config = login_config
+        programme.group_scoring_config = group_scoring_config
         for field, value in windows.items(): setattr(programme, field, value)
         programme.save()
         AuditLog.objects.create(actor=request.user, action='programme_update', target=str(programme.id), detail={k:v for k,v in body.items() if str(k).lower() not in {'password','token','csrf','imagedata','public_map_token'}})
 
     rewards = list(Reward.objects.filter(programme=programme, active=True).order_by('name').values('id','name','description'))
-    row = {'id':programme.id,'name':programme.name,'location':programme.location,'theme':programme.theme,'theme_config':programme.theme_config,'target_xp':programme.target_xp,'milestones':programme.milestones,'rewards':rewards,'max_worker_points':programme.max_worker_points,'attendance_points':programme.attendance_points,'streak_rules':programme.streak_rules,'attendance_attention_days':programme.attendance_attention_days,'points_attention_days':programme.points_attention_days,'attention_grace_days':programme.attention_grace_days,'notification_retention_days':programme.notification_retention_days,'public_config':programme.public_config,'public_map_token':programme.public_map_token,'public_map_token_expires_at':programme.public_map_token_expires_at,'active':programme.active,'status':programme.status,'public_enabled':programme.public_enabled,'starts':programme.starts,'ends':programme.ends}
+    row = {'id':programme.id,'name':programme.name,'location':programme.location,'theme':programme.theme,'theme_config':programme.theme_config,'target_xp':programme.target_xp,'milestones':programme.milestones,'rewards':rewards,'max_worker_points':programme.max_worker_points,'attendance_points':programme.attendance_points,'streak_rules':programme.streak_rules,'login_reward_config':programme.login_reward_config,'group_scoring_config':programme.group_scoring_config,'attendance_attention_days':programme.attendance_attention_days,'points_attention_days':programme.points_attention_days,'attention_grace_days':programme.attention_grace_days,'notification_retention_days':programme.notification_retention_days,'public_config':programme.public_config,'public_map_token':programme.public_map_token,'public_map_token_expires_at':programme.public_map_token_expires_at,'active':programme.active,'status':programme.status,'public_enabled':programme.public_enabled,'starts':programme.starts,'ends':programme.ends}
     return ok({'programmes':[row],'audit':list(AuditLog.objects.filter(programme=programme).order_by('-created_at')[:10].values('action','target','created_at'))})
 

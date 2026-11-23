@@ -28,6 +28,10 @@ type PublicGroup = {
   targetXp?: number;
   progress?: number;
   rank?: number;
+  ranked?: boolean;
+  averageXpPerMember?: number;
+  averageMembers?: number;
+  eligibleMembers?: number;
   members?: number;
   skills?: number;
   achievements?: number;
@@ -40,6 +44,7 @@ type PublicData = {
   collectiveXp?: number;
   groups?: PublicGroup[];
   groupMetrics?: PublicGroup[];
+  groupLeaderboards?: Record<string, PublicGroup[]>;
   highRisers?: Array<{ name: string; xp: number; skills: number }>;
   stats?: {
     participants?: number;
@@ -84,6 +89,7 @@ export function Public() {
   const [error, setError] = useState("");
   const [fullscreen, setFullscreen] = useState(false);
   const [slide, setSlide] = useState(0);
+  const [groupPeriod, setGroupPeriod] = useState<'weekly' | 'monthly' | 'overall'>('overall');
   const requestRef = useRef<AbortController | null>(null);
   const seq = useRef(0);
   const refresh = useCallback(
@@ -140,6 +146,8 @@ export function Public() {
     risers = d.highRisers || [],
     event = mapAccess ? d.currentEvent || d.nextEvent || d.lastEvent : null,
     events = d.events || [];
+  const selectedGroupLeaderboard = d.groupLeaderboards?.[groupPeriod] || groupMetrics;
+  const groupPeriodLabel = groupPeriod === 'weekly' ? 'This week' : groupPeriod === 'monthly' ? 'This month' : 'Overall';
   const target = Number(d.targetXp || 1),
     xp = Number(d.collectiveXp || 0);
   const stats = d.stats || {};
@@ -258,30 +266,37 @@ export function Public() {
                 <span className="eyebrow">THE GROUP RACE</span>
                 <h2>Group progress</h2>
                 <p className="muted">
-                  See how each group is moving towards the shared{" "}
-                  {target.toLocaleString()} XP goal.
+                  Collective XP stays visible, while group rankings use average XP per eligible member to keep different-sized groups fair.
                 </p>
               </div>
               <Trophy />
             </div>
             <GroupRaceChart data={raceData} />
+            <div className="public-period-tabs" role="group" aria-label="Group leaderboard period">
+              {(['weekly', 'monthly', 'overall'] as const).map((period) => (
+                <button
+                  key={period}
+                  type="button"
+                  className={groupPeriod === period ? "is-active" : ""}
+                  onClick={() => setGroupPeriod(period)}
+                  aria-pressed={groupPeriod === period}
+                >
+                  {period === 'weekly' ? 'Weekly' : period === 'monthly' ? 'Monthly' : 'Overall'}
+                </button>
+              ))}
+            </div>
+            <p className="muted public-leaderboard-period-label">{groupPeriodLabel} group ranking · average XP per eligible member</p>
             <div className="public-group-detail-grid">
-              {groupMetrics.map((g: any, i: number) => (
-                <div key={`${g.name}-${i}`}>
+              {selectedGroupLeaderboard.map((g: any, i: number) => (
+                <div key={`${g.id || g.name}-${i}`}>
                   <strong>
-                    {g.rank || i + 1}. {g.name}
+                    {g.ranked ? `${g.rank}. ` : ""}{g.name}
                   </strong>
                   <span>
                     {Number(g.xp || 0).toLocaleString()} XP ·{" "}
-                    {Math.round(
-                      Number(
-                        g.progress ??
-                          (Number(g.xp || 0) /
-                            Math.max(1, Number(g.targetXp || target))) *
-                            100,
-                      ),
-                    )}
-                    % of goal · {Number(g.members || 0)} members
+                    {Number(g.averageXpPerMember || 0).toLocaleString(undefined, { maximumFractionDigits: 1 })} average XP/member ·{" "}
+                    {Number(g.eligibleMembers || 0)} eligible
+                    {!g.ranked ? " · not yet eligible to rank" : ""}
                   </span>
                 </div>
               ))}
