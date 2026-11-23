@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Gift Box icon"><defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFE78A"/><stop offset=".52" stop-color="#F4B83F"/><stop offset="1" stop-color="#D98A22"/></linearGradient>
+    <linearGradient id="green" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#63C58A"/><stop offset="1" stop-color="#237A48"/></linearGradient>
+    <linearGradient id="coral" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FF9675"/><stop offset="1" stop-color="#D95D4F"/></linearGradient>
+    <linearGradient id="silver" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#F4F3E8"/><stop offset="1" stop-color="#C7D0C5"/></linearGradient>
+    <linearGradient id="wood" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#DFA45C"/><stop offset="1" stop-color="#A85B18"/></linearGradient>
+    </defs><g stroke-linecap="round" stroke-linejoin="round"><rect x="104" y="205" width="304" height="220" rx="24" fill="url(#coral)" stroke="#A94136" stroke-width="13"/><path d="M235 205h42v220h-42z" fill="#F6C65B"/><path d="M84 165h344v68H84z" fill="url(#gold)" stroke="#A85B18" stroke-width="12"/><path d="M256 164c-91 0-106-89-51-89 39 0 51 89 51 89 0 0 14-89 53-89 55 0 38 89-53 89z" fill="#2E9B69" stroke="#17665B" stroke-width="12" stroke-linejoin="round"/></g></svg>

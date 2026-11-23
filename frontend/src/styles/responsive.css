@@ -1,0 +1,1561 @@
+/* v84.5.4 senior polish: consistent surfaces, spacing and responsive utility cards */
+.card,
+.soft-card,
+.worker-config-page .card,
+.game-editor-card,
+.game-library-card,
+.game-history-card {
+  background: color-mix(in srgb, var(--surface) 90%, var(--tile4) 10%);
+  border-color: color-mix(in srgb, var(--border) 78%, var(--accent) 22%);
+}
+
+.page::before,
+.app-shell::after {
+  background: color-mix(in srgb, var(--bg) 68%, transparent);
+}
+
+.worker-dashboard-page .card,
+.admin-dashboard-page .card,
+.worker-config-page .card,
+.groups-page .card,
+.games-page .card,
+.theme-studio-page .card {
+  box-shadow: 0 14px 36px var(--color-rgba-23-59-50-08);
+}
+
+.worker-dashboard-page .card:nth-of-type(4n+1),
+.worker-config-page .card:nth-of-type(4n+1) {
+  background: color-mix(in srgb, var(--tile1) 78%, var(--surface) 22%)
+}
+
+.worker-dashboard-page .card:nth-of-type(4n+2),
+.worker-config-page .card:nth-of-type(4n+2) {
+  background: color-mix(in srgb, var(--tile2) 72%, var(--surface) 28%)
+}
+
+.worker-dashboard-page .card:nth-of-type(4n+3),
+.worker-config-page .card:nth-of-type(4n+3) {
+  background: color-mix(in srgb, var(--tile3) 72%, var(--surface) 28%)
+}
+
+.worker-dashboard-page .card:nth-of-type(4n),
+.worker-config-page .card:nth-of-type(4n) {
+  background: color-mix(in srgb, var(--tile4) 72%, var(--surface) 28%)
+}
+
+.skill-map {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: stretch
+}
+
+.skill-node {
+  min-width: 0;
+  position: relative;
+  overflow: hidden
+}
+
+.skill-node:nth-child(4n+1) {
+  background: color-mix(in srgb, var(--tile1) 74%, var(--surface) 26%)
+}
+
+.skill-node:nth-child(4n+2) {
+  background: color-mix(in srgb, var(--tile2) 74%, var(--surface) 26%)
+}
+
+.skill-node:nth-child(4n+3) {
+  background: color-mix(in srgb, var(--tile3) 74%, var(--surface) 26%)
+}
+
+.skill-node:nth-child(4n) {
+  background: color-mix(in srgb, var(--tile4) 74%, var(--surface) 26%)
+}
+
+.group-create-compact {
+  max-height: 0;
+  overflow: hidden;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-width: 0;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: max-height .25s ease, padding .25s ease, opacity .2s ease
+}
+
+.group-create-compact.is-open {
+  max-height: 720px;
+  padding-top: 18px;
+  padding-bottom: 18px;
+  border-width: 1px;
+  opacity: 1;
+  transform: none
+}
+
+.groups-list-compact {
+  display: grid;
+  gap: 12px;
+  max-height: min(58vh, 680px);
+  overflow: auto;
+  padding-right: 3px
+}
+
+.group-compact-card {
+  min-height: 0
+}
+
+.group-player-picker,
+.check-list {
+  max-height: 190px;
+  overflow: auto;
+  display: grid;
+  gap: 6px;
+  padding-right: 4px
+}
+
+.account-list {
+  max-height: min(62vh, 620px);
+  overflow: auto;
+  padding-right: 4px
+}
+
+.account-row {
+  min-height: 72px;
+  max-height: 96px;
+  overflow: hidden
+}
+
+.account-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px
+}
+
+.account-actions .btn {
+  white-space: nowrap;
+  min-width: 0
+}
+
+.account-create-avatar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0
+}
+
+.account-create-avatar img {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  object-fit: cover;
+  background: var(--tile1)
+}
+
+.account-create-avatar select {
+  flex: 1
+}
+
+.avatar-picker-compact {
+  display: block
+}
+
+.avatar-current-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center
+}
+
+.avatar-current-row>img {
+  border-radius: 18px;
+  background: var(--tile1);
+  padding: 3px
+}
+
+.avatar-current-row small {
+  display: block;
+  color: var(--muted);
+  margin-top: 3px
+}
+
+.avatar-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  max-height: min(60vh, 500px);
+  overflow: auto;
+  padding: 4px
+}
+
+.avatar-choice-grid .avatar-choice {
+  min-height: 78px
+}
+
+.avatar-picker-modal {
+  width: min(620px, calc(100vw - 28px));
+  max-height: min(82dvh, 700px);
+  overflow: auto
+}
+
+.profile-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: var(--color-rgba-23-59-50-28);
+  backdrop-filter: blur(7px)
+}
+
+.profile-modal {
+  width: min(620px, 100%);
+  max-height: min(86dvh, 760px);
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 26px;
+  background: var(--surface);
+  box-shadow: 0 28px 90px var(--color-rgba-23-59-50-24);
+  padding: 22px
+}
+
+.profile-modal-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start
+}
+
+.profile-modal-head h2 {
+  margin: 4px 0
+}
+
+.profile-modal-head p {
+  margin: 0;
+  color: var(--muted)
+}
+
+.profile-modal-content {
+  padding-top: 18px
+}
+
+.profile-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 18px
+}
+
+.notifications-page {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  display: flex;
+  flex-direction: column;
+  max-width: none;
+  width: 100%;
+  padding: clamp(18px, 4vw, 42px);
+  background: var(--color-rgba-23-59-50-24);
+  backdrop-filter: blur(7px);
+  overflow: auto
+}
+
+.notifications-page>* {
+  width: min(920px, 100%);
+  margin-left: auto;
+  margin-right: auto
+}
+
+.notifications-page .page-title {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 18px 20px;
+  box-shadow: 0 22px 70px var(--color-rgba-23-59-50-16)
+}
+
+.notification-feed {
+  display: grid;
+  gap: 9px
+}
+
+.notification-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 12px 30px var(--color-rgba-23-59-50-09)
+}
+
+.notification-empty {
+  background: var(--surface)
+}
+
+.game-library-card .game-library-filter {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  padding: 8px 0
+}
+
+.admin-game-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px
+}
+
+.admin-game-tile {
+  min-height: 118px;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, var(--accent) 22%)
+}
+
+.game-history-card .game-history-tabs {
+  margin-bottom: 10px
+}
+
+.game-history-list {
+  max-height: 520px;
+  overflow: auto;
+  display: grid;
+  gap: 8px
+}
+
+.game-history-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--tile4) 54%, var(--surface) 46%);
+  border: 1px solid var(--border)
+}
+
+.game-history-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 5px
+}
+
+.game-history-row:nth-child(4n+2) {
+  background: color-mix(in srgb, var(--tile1) 54%, var(--surface) 46%)
+}
+
+.game-history-row:nth-child(4n+3) {
+  background: color-mix(in srgb, var(--tile2) 54%, var(--surface) 46%)
+}
+
+.game-history-row:nth-child(4n) {
+  background: color-mix(in srgb, var(--tile3) 54%, var(--surface) 46%)
+}
+
+.event-map-wrap {
+  position: relative
+}
+
+.event-map {
+  border-radius: 18px;
+  overflow: hidden
+}
+
+.map-help {
+  display: none
+}
+
+.map-instruction-note {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--muted)
+}
+
+.map-instruction-note strong {
+  color: var(--text)
+}
+
+.calendar-field label {
+  display: grid;
+  gap: 6px
+}
+
+.calendar-input {
+  cursor: pointer
+}
+
+.calendar-popover-portal {
+  z-index: 1600
+}
+
+.reaction-game {
+  background: var(--tile4);
+  border: 1px solid var(--border);
+  box-shadow: none
+}
+
+.reaction-game .reaction-orbit {
+  background: var(--tile2)
+}
+
+.number-memory-value {
+  background: var(--tile3)
+}
+
+.typing-passage {
+  background: var(--tile4)
+}
+
+.error-page,
+.not-found-page {
+  background: transparent
+}
+
+.error-page .card,
+.not-found-page .card {
+  background: var(--tile4);
+  border: 1px solid var(--border)
+}
+
+@media(max-width:900px) {
+  .admin-game-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr))
+  }
+
+  .skill-map {
+    grid-template-columns: 1fr
+  }
+
+  .game-history-row {
+    grid-template-columns: 1fr
+  }
+
+  .game-history-actions {
+    justify-content: flex-start
+  }
+
+  .avatar-current-row {
+    grid-template-columns: auto 1fr
+  }
+
+  .avatar-current-row .btn {
+    grid-column: 2;
+    justify-self: start
+  }
+}
+
+.qr-box {
+  width: min(100%, 360px);
+  margin: 16px auto 0;
+  padding: 16px;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  border-radius: 20px;
+  background: var(--tile4);
+  border: 1px solid var(--border);
+  overflow: hidden
+}
+
+.qr-box svg {
+  width: min(220px, 70vw);
+  height: auto;
+  max-width: 100%;
+  display: block
+}
+
+.worker-qr-card .button {
+  width: fit-content
+}
+
+.attendance-card,
+.worker-attendance-card {
+  min-width: 0
+}
+
+.attendance-card .card,
+.worker-attendance-card .card {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0
+}
+
+.activity-page-table .activity {
+  max-height: 88px;
+  overflow: auto;
+  background: color-mix(in srgb, var(--tile4) 42%, var(--surface) 58%);
+  border: 1px solid var(--border);
+  border-radius: 14px
+}
+
+.activity-page-table .activity:nth-child(4n+2) {
+  background: color-mix(in srgb, var(--tile1) 42%, var(--surface) 58%)
+}
+
+.activity-page-table .activity:nth-child(4n+3) {
+  background: color-mix(in srgb, var(--tile2) 42%, var(--surface) 58%)
+}
+
+.activity-page-table .activity:nth-child(4n) {
+  background: color-mix(in srgb, var(--tile3) 42%, var(--surface) 58%)
+}
+
+.config-collapsible {
+  margin-bottom: 12px
+}
+
+.worker-config-page>.config-collapsible,
+.worker-config-page .config-collapsible {
+  background: color-mix(in srgb, var(--tile4) 48%, var(--surface) 52%)
+}
+
+.worker-config-page .config-collapsible:nth-of-type(4n+1) {
+  background: color-mix(in srgb, var(--tile1) 48%, var(--surface) 52%)
+}
+
+.worker-config-page .config-collapsible:nth-of-type(4n+2) {
+  background: color-mix(in srgb, var(--tile2) 48%, var(--surface) 52%)
+}
+
+.worker-config-page .config-collapsible:nth-of-type(4n+3) {
+  background: color-mix(in srgb, var(--tile3) 48%, var(--surface) 52%)
+}
+
+.reaction-game.is-go {
+  background: var(--color-b9e8c7)
+}
+
+.reaction-game.is-go .reaction-orbit {
+  background: var(--color-f7fff8);
+  border-color: var(--color-2e9b69)
+}
+
+.typing-window {
+  overflow: hidden
+}
+
+.typing-passage {
+  width: max-content;
+  min-width: 100%;
+  animation: typing-drift 22s linear infinite
+}
+
+@keyframes typing-drift {
+  0% {
+    transform: translateX(0)
+  }
+
+  100% {
+    transform: translateX(-90px)
+  }
+}
+
+select,
+input,
+textarea {
+  border-color: var(--border);
+  background: var(--surface);
+  color: var(--text)
+}
+
+select:focus,
+input:focus,
+textarea:focus {
+  outline: 2px solid color-mix(in srgb, var(--focus) 55%, transparent);
+  outline-offset: 1px
+}
+
+.game-editor-card select,
+.account-create-card select,
+.theme-studio-page select {
+  border-radius: 12px;
+  min-height: 42px;
+  padding: 9px 12px
+}
+
+.search-select-trigger,
+.multi-search-select-trigger {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text)
+}
+
+.search-select-menu,
+.multi-search-select-menu {
+  background: var(--surface)
+}
+
+/* v84.5.5 — skills workspace */
+.skills-config-page {
+  display: grid;
+  gap: 18px
+}
+
+.skills-config-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start
+}
+
+.skills-panel {
+  min-width: 0
+}
+
+.skills-panel-create {
+  --skills-tone: var(--tile1)
+}
+
+.skills-panel-assign {
+  --skills-tone: var(--tile2)
+}
+
+.skills-panel-progress {
+  --skills-tone: var(--tile4)
+}
+
+.skills-panel-library {
+  --skills-tone: var(--tile3)
+}
+
+.skills-panel .collapsible-card__header,
+.skills-panel .collapsible-header {
+  background: color-mix(in srgb, var(--skills-tone) 58%, var(--surface));
+  border-radius: 18px
+}
+
+.skills-subsection-head,
+.skills-library-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 18px 0 12px
+}
+
+.skills-subsection-head h3,
+.skills-library-head h3 {
+  margin: 0
+}
+
+.skills-subsection-head p {
+  margin: 4px 0 0
+}
+
+.skill-milestone-list {
+  display: grid;
+  gap: 10px
+}
+
+.skill-milestone-card {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--skills-tone) 34%, var(--surface));
+}
+
+.skill-milestone-number {
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  background: var(--skills-tone);
+  color: var(--text)
+}
+
+.skill-milestone-fields {
+  min-width: 0
+}
+
+.skills-panel-copy {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--skills-tone) 34%, var(--surface));
+  margin-bottom: 14px
+}
+
+.skills-panel-copy p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45
+}
+
+.skills-library-head {
+  margin-top: 0
+}
+
+.skills-library-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px
+}
+
+.skill-library-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 11px;
+  padding: 15px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+  min-width: 0
+}
+
+.skill-library-card.skill-tone-1 {
+  background: color-mix(in srgb, var(--tile1) 46%, var(--surface))
+}
+
+.skill-library-card.skill-tone-2 {
+  background: color-mix(in srgb, var(--tile2) 46%, var(--surface))
+}
+
+.skill-library-card.skill-tone-3 {
+  background: color-mix(in srgb, var(--tile3) 46%, var(--surface))
+}
+
+.skill-library-card.skill-tone-4 {
+  background: color-mix(in srgb, var(--tile4) 46%, var(--surface))
+}
+
+.skill-library-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  color: var(--accent)
+}
+
+.skill-library-main {
+  min-width: 0;
+  display: grid;
+  gap: 4px
+}
+
+.skill-library-main strong {
+  font-size: 14px
+}
+
+.skill-library-main span {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis
+}
+
+.skill-library-main small {
+  font-size: 11px;
+  color: var(--muted)
+}
+
+.skill-library-actions {
+  grid-column: 1/-1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 4px
+}
+
+.skills-state-card {
+  padding: 20px
+}
+
+@media(max-width:900px) {
+
+  .skills-config-grid,
+  .skills-library-grid {
+    grid-template-columns: 1fr
+  }
+
+  .skill-milestone-card {
+    grid-template-columns: 28px minmax(0, 1fr) auto
+  }
+
+  .skill-milestone-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr))
+  }
+}
+
+@media(max-width:600px) {
+
+  .skills-subsection-head,
+  .skills-library-head {
+    align-items: flex-start;
+    flex-direction: column
+  }
+
+  .skill-milestone-card {
+    grid-template-columns: 28px minmax(0, 1fr)
+  }
+
+  .skill-milestone-card>.btn {
+    grid-column: 2;
+    justify-self: start
+  }
+
+  .skill-milestone-fields {
+    grid-template-columns: 1fr
+  }
+
+  .skill-library-actions {
+    justify-content: flex-start
+  }
+}
+
+/* v84.5.6 interaction polish */
+.notification-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1500;
+  background: var(--color-rgba-23-59-50-24);
+  backdrop-filter: blur(6px);
+  display: flex;
+  justify-content: flex-end;
+  align-items: stretch;
+  padding: 14px
+}
+
+.notification-panel {
+  width: min(560px, 100%);
+  height: 100%;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: 0 28px 90px var(--color-rgba-23-59-50-22);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden
+}
+
+.notification-panel-head {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  background: color-mix(in srgb, var(--tile1) 55%, var(--surface))
+}
+
+.notification-panel-head h3 {
+  margin: 3px 0
+}
+
+.notification-panel-head p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px
+}
+
+.notification-panel-body {
+  padding: 12px;
+  overflow: auto;
+  display: grid;
+  gap: 9px
+}
+
+.notification-panel-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  gap: 10px;
+  align-items: start;
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--tile2) 32%, var(--surface));
+  transition: opacity .16s, transform .16s
+}
+
+.notification-panel-item.unread {
+  background: color-mix(in srgb, var(--tile1) 52%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent) 25%, var(--border))
+}
+
+.notification-panel-item.clearing {
+  opacity: 0;
+  transform: translateX(18px)
+}
+
+.notification-panel-icon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: var(--tile1);
+  color: var(--accent)
+}
+
+.notification-panel-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0
+}
+
+.notification-panel-copy strong,
+.notification-panel-copy span {
+  overflow-wrap: anywhere
+}
+
+.notification-panel-copy small {
+  color: var(--muted);
+  font-size: 9px
+}
+
+.notification-panel-empty {
+  min-height: 220px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 6px;
+  color: var(--muted);
+  text-align: center
+}
+
+.notification-empty-art {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  background: var(--tile3);
+  color: var(--accent2)
+}
+
+.notification-item-close {
+  align-self: start
+}
+
+.account-list {
+  max-height: min(64vh, 660px);
+  overflow: auto;
+  padding-right: 4px
+}
+
+.account-search-empty {
+  display: grid;
+  place-items: center;
+  text-align: center;
+  gap: 5px;
+  padding: 30px 18px;
+  border: 1px dashed var(--border);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--tile1) 32%, var(--surface));
+  color: var(--muted)
+}
+
+.account-search-empty strong {
+  color: var(--text)
+}
+
+.account-row {
+  grid-template-columns: minmax(150px, 1fr) auto minmax(130px, 170px) minmax(180px, auto);
+  align-items: center
+}
+
+.account-row select {
+  min-width: 130px
+}
+
+.worker-dashboard-page .worker-attendance-card {
+  background: color-mix(in srgb, var(--tile1) 62%, var(--surface))
+}
+
+.worker-dashboard-page .worker-people-card {
+  background: color-mix(in srgb, var(--tile4) 62%, var(--surface))
+}
+
+.worker-dashboard-page .worker-activity-card {
+  background: color-mix(in srgb, var(--tile3) 62%, var(--surface))
+}
+
+.worker-dashboard-page .worker-tools-card {
+  background: color-mix(in srgb, var(--tile2) 62%, var(--surface))
+}
+
+.worker-dashboard-page .worker-qr-card {
+  background: color-mix(in srgb, var(--tile3) 58%, var(--surface))
+}
+
+.map-event-create-card {
+  background: color-mix(in srgb, var(--tile1) 58%, var(--surface))
+}
+
+.map-event-share-card {
+  background: color-mix(in srgb, var(--tile3) 52%, var(--surface))
+}
+
+.map-event-timeline-card {
+  background: color-mix(in srgb, var(--tile4) 52%, var(--surface))
+}
+
+.map-expand-btn {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  z-index: 600;
+  width: 42px;
+  height: 42px;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  color: var(--text);
+  box-shadow: 0 8px 22px var(--color-rgba-23-59-50-14);
+  cursor: pointer
+}
+
+.map-expand-btn:hover {
+  transform: translateY(-1px);
+  background: var(--surface)
+}
+
+.event-map-wrap.map-expanded {
+  position: fixed;
+  inset: 14px;
+  z-index: 1450;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  box-shadow: 0 30px 100px var(--color-rgba-23-59-50-3)
+}
+
+.event-map-wrap.map-expanded .event-map {
+  height: 100%;
+  min-height: 0
+}
+
+.event-timeline {
+  display: grid;
+  gap: 10px
+}
+
+.event-timeline-row {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--surface) 78%, transparent)
+}
+
+.event-timeline-row.current {
+  background: color-mix(in srgb, var(--tile1) 64%, var(--surface))
+}
+
+.event-timeline-row.scheduled:nth-child(odd) {
+  background: color-mix(in srgb, var(--tile2) 58%, var(--surface))
+}
+
+.event-timeline-row.scheduled:nth-child(even) {
+  background: color-mix(in srgb, var(--tile3) 52%, var(--surface))
+}
+
+.event-timeline-row summary {
+  list-style: none;
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+  cursor: pointer
+}
+
+.event-timeline-row summary::-webkit-details-marker {
+  display: none
+}
+
+.event-timeline-row summary:after {
+  content: '+';
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--surface2);
+  font-weight: 900
+}
+
+.event-timeline-row[open] summary:after {
+  content: '−'
+}
+
+.event-timeline-details {
+  padding: 0 14px 14px 90px
+}
+
+.login-explore-grid {
+  display: none
+}
+
+.login-page .login-card {
+  max-height: calc(100dvh - 48px)
+}
+
+.profile-modal-content {
+  min-width: 0
+}
+
+.avatar-current-row {
+  min-width: 0
+}
+
+.avatar-current-row>div {
+  min-width: 0
+}
+
+.avatar-current-row strong,
+.avatar-current-row small {
+  overflow-wrap: anywhere
+}
+
+.avatar-current-row .btn {
+  min-width: 132px;
+  white-space: nowrap
+}
+
+.profile-modal {
+  isolation: isolate
+}
+
+.profile-overlay .avatar-picker-modal {
+  z-index: 1501
+}
+
+@media(max-width:520px) {
+  .profile-modal {
+    width: 100%;
+    padding: 15px
+  }
+
+  .avatar-current-row {
+    grid-template-columns: 58px minmax(0, 1fr);
+    gap: 9px
+  }
+
+  .avatar-current-row>img {
+    width: 58px;
+    height: 58px
+  }
+
+  .avatar-current-row .btn {
+    grid-column: 1/-1;
+    width: 100%;
+    min-width: 0
+  }
+
+  .profile-actions .btn {
+    flex: 1 1 100%
+  }
+}
+
+/* v84.5.7: persistent landscape backdrop and responsive utility surfaces */
+.app-shell {
+  position: relative;
+  isolation: isolate;
+  background: transparent
+}
+
+.app-shell::before {
+  z-index: 0;
+  opacity: .34
+}
+
+.app-shell::after {
+  z-index: 0;
+  background: color-mix(in srgb, var(--bg) 34%, transparent)
+}
+
+.app-shell>.sidebar,
+.app-shell>.main {
+  z-index: 1
+}
+
+.worker-dashboard-page,
+.admin-dashboard-page,
+.page {
+  background: transparent
+}
+
+.points-qr-modal {
+  width: min(430px, calc(100vw - 28px));
+  padding: 22px;
+  border-radius: 24px
+}
+
+.points-qr-large {
+  display: grid;
+  place-items: center;
+  padding: 14px;
+  margin: 14px auto;
+  width: min(205px, 100%);
+  background: var(--color-fff);
+  border: 1px solid var(--border);
+  border-radius: 18px
+}
+
+.points-qr-data {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px
+}
+
+.points-qr-data>span {
+  padding: 9px;
+  border-radius: 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border)
+}
+
+.points-qr-modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap
+}
+
+.points-qr-modal-actions .button {
+  width: auto
+}
+
+.attendance-qr-card {
+  background: color-mix(in srgb, var(--tile1) 66%, var(--surface))
+}
+
+.attendance-qr-box {
+  width: min(250px, 100%);
+  margin: 12px auto 0;
+  padding: 14px;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+  gap: 7px
+}
+
+.attendance-qr-box .button {
+  width: auto
+}
+
+.phone-notification-prompt {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  z-index: 1600;
+  width: min(430px, calc(100vw - 28px));
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: 20px;
+  box-shadow: 0 24px 70px var(--color-rgba-23-59-50-24);
+  background: var(--surface);
+  border: 1px solid var(--border)
+}
+
+@media(max-width:760px) {
+  .app-shell::before {
+    display: block;
+    opacity: .30;
+    inset: 0 0 74px 0
+  }
+
+  .app-shell::after {
+    display: block;
+    background: color-mix(in srgb, var(--bg) 30%, transparent)
+  }
+
+  .phone-notification-prompt {
+    bottom: 86px;
+    grid-template-columns: auto 1fr auto;
+    align-items: start
+  }
+
+  .phone-notification-prompt .button {
+    grid-column: 2 / -1;
+    width: 100%
+  }
+
+  .points-qr-modal {
+    padding: 18px
+  }
+
+  .points-qr-large {
+    width: 190px
+  }
+
+  .attendance-qr-box {
+    width: min(230px, 100%)
+  }
+}
+
+/* v84.5.7: worker points and assigned-game density */
+.points-page .points-action-grid {
+  gap: 16px
+}
+
+.points-page .card {
+  background: color-mix(in srgb, var(--tile1) 34%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 14%, var(--border))
+}
+
+.points-page .points-action-grid>.card:nth-child(2) {
+  background: color-mix(in srgb, var(--tile3) 32%, transparent)
+}
+
+.points-page .search-select-trigger,
+.points-page input,
+.points-page textarea {
+  background: color-mix(in srgb, var(--surface) 48%, transparent)
+}
+
+.game-history-card {
+  position: relative
+}
+
+.game-history-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  margin: -4px -4px 12px;
+  padding: 6px;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+  justify-content: flex-start
+}
+
+.game-history-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  max-height: 620px;
+  overflow: auto;
+  padding: 2px
+}
+
+.game-history-row {
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+  align-content: space-between;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 17px;
+  background: color-mix(in srgb, var(--tile2) 48%, var(--surface))
+}
+
+.game-history-row:nth-child(3n+2) {
+  background: color-mix(in srgb, var(--tile3) 44%, var(--surface))
+}
+
+.game-history-row:nth-child(3n) {
+  background: color-mix(in srgb, var(--tile4) 44%, var(--surface))
+}
+
+.game-history-main {
+  min-width: 0;
+  display: grid;
+  gap: 4px
+}
+
+.game-history-main strong,
+.game-history-main span,
+.game-history-main small {
+  overflow-wrap: anywhere
+}
+
+.game-history-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap
+}
+
+.game-history-actions .button {
+  flex: 1 1 auto
+}
+
+.points-result {
+  background: color-mix(in srgb, var(--tile4) 55%, var(--surface))
+}
+
+@media(max-width:1000px) {
+  .game-history-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr))
+  }
+}
+
+@media(max-width:650px) {
+  .game-history-list {
+    grid-template-columns: 1fr
+  }
+
+  .game-history-tabs {
+    position: static
+  }
+
+  .points-page .grid-2 {
+    grid-template-columns: 1fr
+  }
+}
+
+
+@media (min-width:761px) {
+  .app-shell>.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0
+  }
+
+  .app-shell>.main {
+    position: relative
+  }
+}
+
+
+/* v84.5.23 responsive corrections */
+.app-shell::before {
+  opacity: 1 !important
+}
+
+.app-shell::after {
+  background: transparent !important
+}
+
+@media(max-width:760px) {
+  .app-shell>.sidebar {
+    height: 78px !important;
+    min-height: 78px !important;
+    max-height: 78px !important;
+    padding-bottom: 7px !important
+  }
+
+  .sidebar nav {
+    padding-right: 0 !important;
+  }
+
+  .sidebar nav {
+    height: 100% !important
+  }
+
+  .skills-config-page .skills-panel-progress,
+  .skills-config-page .skills-panel-library {
+    grid-column: auto;
+    grid-row: auto
+  }
+
+  .skills-config-page .skills-panel-library {
+    margin-top: 0
+  }
+
+  .worker-attendance-card .config-collapsible-body {
+    padding-top: 0
+  }
+}
+
+/* v84.5.33: keep worker/admin game filters inside the viewport on phones. */
+@media (max-width:600px) {
+  .game-library-card .game-library-filter {
+    min-width: 0;
+    overflow: hidden
+  }
+
+  .game-library-card .game-library-filter .segmented-tabs {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .game-library-card .game-library-filter .segmented-tabs::-webkit-scrollbar {
+    display: none
+  }
+
+  .game-library-card .game-library-filter .segmented-tabs button {
+    flex: 0 0 auto;
+    white-space: nowrap
+  }
+
+  .game-library-card .game-library-filter .games-search {
+    min-width: 0;
+    max-width: 100%
+  }
+}
+
+/* v84.5.36: notification drawer exits as one smooth surface instead of snapping. */
+.notification-overlay {
+  opacity: 1;
+  transition: opacity .22s ease;
+  background: var(--color-rgba-23-59-50-24)
+}
+
+.notification-overlay.is-closing {
+  opacity: 0;
+  pointer-events: none
+}
+
+.notification-panel {
+  transform: translateX(0);
+  opacity: 1;
+  transition: transform .26s cubic-bezier(.2, .75, .2, 1), opacity .2s ease
+}
+
+.notification-overlay:not(.is-closing) .notification-panel {
+  animation: notification-panel-in .26s cubic-bezier(.2, .75, .2, 1) both
+}
+
+.notification-panel.is-closing {
+  transform: translateX(24px);
+  opacity: 0
+}
+
+@keyframes notification-panel-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1
+  }
+}
+
+@media(max-width:760px) {
+  .notification-overlay {
+    padding: 8px
+  }
+
+  .notification-panel {
+    width: 100%;
+    border-radius: 20px
+  }
+}
+
+@media(prefers-reduced-motion:reduce) {
+
+  .notification-overlay,
+  .notification-panel {
+    transition: none !important;
+    animation: none !important
+  }
+}

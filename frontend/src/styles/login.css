@@ -1,0 +1,344 @@
+/* Login layout: one viewport on desktop, natural document flow on mobile. */
+.login-page {
+    min-height: 100dvh;
+    height: 100dvh;
+    overflow: hidden;
+    background: var(--q-paper);
+    color: var(--text)
+}
+
+.login-page .login-hero {
+    height: 100dvh;
+    display: grid;
+    grid-template-columns: minmax(0, 1.04fr) minmax(440px, .96fr);
+    overflow: hidden;
+    background: var(--q-paper)
+}
+
+.login-page .login-visual {
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    background: var(--q-paper)
+}
+
+.login-page .login-kids-art {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center center
+}
+
+.login-page .login-explore-card {
+    position: absolute;
+    left: clamp(16px, 2.6vw, 36px);
+    right: clamp(16px, 2.6vw, 36px);
+    bottom: clamp(14px, 2.5vh, 28px);
+    padding: 11px 14px;
+    border: 1px solid color-mix(in srgb, var(--color-fff) 44%, transparent);
+    border-radius: 15px;
+    background: color-mix(in srgb, var(--nav) 80%, transparent);
+    color: var(--color-fff);
+    box-shadow: 0 12px 28px var(--color-rgba-0-0-0-18)
+}
+
+.login-explore-card .eyebrow {
+    display: block;
+    margin-bottom: 3px;
+    color: var(--color-fff);
+    font-size: 9px;
+    letter-spacing: .08em
+}
+
+.login-explore-card strong {
+    display: block;
+    font-size: 14px;
+    line-height: 1.2
+}
+
+.login-explore-card>span:last-child {
+    display: block;
+    margin-top: 3px;
+    font-size: 10px;
+    line-height: 1.35;
+    color: var(--color-rgba-255-255-255-86)
+}
+
+.login-page .login-hero-content {
+    position: absolute;
+    left: clamp(16px, 2.6vw, 36px);
+    top: clamp(14px, 2.5vh, 26px);
+    z-index: 4
+}
+
+.login-page .login-brand-lockup {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 12px;
+    border-radius: 15px;
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 8px 28px var(--color-rgba-23-59-50-12)
+}
+
+.login-page .login-form-pane {
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    padding: clamp(18px, 3vw, 44px);
+    background: var(--q-paper) var(--theme-bg-image, url('/quest-media/graphics/youth-dashboard-bg.png')) center/cover no-repeat
+}
+
+.login-page .login-card {
+    position: relative;
+    z-index: 2;
+    width: min(450px, 100%);
+    max-height: calc(100dvh - 48px);
+    overflow: auto;
+    margin: 0;
+    padding: 26px;
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    background: color-mix(in srgb, var(--surface) 94%, transparent);
+    color: var(--text);
+    box-shadow: 0 22px 56px var(--color-rgba-23-59-50-18)
+}
+
+.login-card h2 {
+    font-size: clamp(27px, 2.4vw, 34px);
+    margin: 10px 0 5px
+}
+
+.login-card input {
+    min-height: 46px;
+    border-radius: 12px
+}
+
+.login-card-topline {
+    display: flex;
+    align-items: center;
+    gap: 9px
+}
+
+.login-card-icon {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: var(--tile1);
+    color: var(--accent)
+}
+
+.login-options {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 10px 0 13px
+}
+
+.login-check {
+    display: flex;
+    align-items: center;
+    gap: 8px
+}
+
+.login-check input {
+    min-height: 0;
+    width: 16px
+}
+
+.login-submit {
+    width: 100%;
+    justify-content: center
+}
+
+.login-secure-note {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: 11px
+}
+
+.login-page .password-toggle {
+    min-width: 40px;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--tile1);
+    color: var(--text);
+    display: grid;
+    place-items: center;
+    box-shadow: none;
+    cursor: pointer
+}
+
+.login-page .password-toggle:hover {
+    background: var(--tile2);
+    border-color: var(--accent);
+    color: var(--accent)
+}
+
+.login-page .login-hero-shade,
+.login-page .login-copy {
+    display: none !important
+}
+
+@media (min-width:761px) and (max-width:1100px) {
+    .login-page .login-hero {
+        grid-template-columns: minmax(0, 1.18fr) minmax(380px, .82fr)
+    }
+
+    .login-page .login-form-pane {
+        padding: 18px
+    }
+
+    .login-page .login-card {
+        padding: 22px;
+        max-height: calc(100dvh - 36px)
+    }
+
+    .login-page .login-kids-art {
+        object-fit: cover
+    }
+
+    .login-page .login-explore-card {
+        left: 16px;
+        right: 16px;
+        bottom: 14px
+    }
+}
+
+@media(max-width:760px) {
+    .login-page {
+        height: auto;
+        min-height: 100dvh;
+        overflow-x: hidden;
+        overflow-y: auto;
+        margin: 0;
+        padding: 0
+    }
+
+    .login-page .login-hero {
+        display: flex;
+        flex-direction: column;
+        height: auto;
+        min-height: 100dvh;
+        overflow: visible
+    }
+
+    .login-page .login-visual {
+        width: 100%;
+        height: clamp(230px, 38dvh, 330px);
+        min-height: 230px;
+        flex: 0 0 auto;
+        display: block;
+        margin: 0;
+        padding: 0;
+        line-height: 0
+    }
+
+    .login-page .login-kids-art {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center top;
+        margin: 0;
+        display: block
+    }
+
+    .login-page .login-hero-content {
+        left: auto;
+        right: 10px;
+        top: 10px
+    }
+
+    .login-page .login-brand-lockup {
+        transform: scale(.76);
+        transform-origin: top right
+    }
+
+    .login-page .login-explore-card {
+        left: 10px;
+        right: 10px;
+        bottom: 9px;
+        padding: 7px 9px;
+        border-radius: 12px
+    }
+
+    .login-explore-card .eyebrow {
+        font-size: 8px
+    }
+
+    .login-explore-card strong {
+        font-size: 11px
+    }
+
+    .login-explore-card>span:last-child {
+        font-size: 9px
+    }
+
+    .login-page .login-form-pane {
+        width: 100%;
+        height: auto;
+        min-height: 0;
+        display: block;
+        padding: 20px 12px 30px;
+        background-color: var(--q-paper);
+        background-position: center top;
+        background-size: cover;
+        background-repeat: no-repeat
+    }
+
+    .login-page .login-card {
+        width: 100%;
+        max-width: 520px;
+        max-height: none;
+        overflow: visible;
+        margin: 0 auto;
+        padding: 20px 15px 24px;
+        border-radius: 20px;
+        background: color-mix(in srgb, var(--surface) 94%, transparent);
+        box-shadow: 0 16px 42px var(--color-rgba-23-59-50-18)
+    }
+
+    .login-card h2 {
+        font-size: 27px
+    }
+
+    .login-card input {
+        min-height: 47px
+    }
+
+    .login-options {
+        margin: 10px 0 12px
+    }
+}
+
+@media(max-width:420px) {
+    .login-page .login-visual {
+        height: clamp(215px, 35dvh, 285px)
+    }
+
+    .login-explore-card>span:last-child {
+        display: none
+    }
+
+    .login-page .login-form-pane {
+        padding: 16px 10px 24px
+    }
+
+    .login-page .login-card {
+        padding: 18px 13px 22px
+    }
+}

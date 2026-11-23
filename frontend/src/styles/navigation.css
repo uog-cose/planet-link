@@ -1,0 +1,408 @@
+/* Navigation: one semantic navigation surface. Desktop stacks; mobile becomes one compact row. */
+.sidebar-nav {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0
+}
+
+.sidebar-nav-main {
+  display: grid;
+  gap: 5px;
+  min-height: 0
+}
+
+.sidebar-nav-utility {
+  display: grid;
+  gap: 5px;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid color-mix(in srgb, var(--nav) 65%, var(--color-fff))
+}
+
+.sidebar-nav-utility a,
+.sidebar-nav-utility button {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 10px;
+  border: 1px solid transparent;
+  border-radius: 13px;
+  background: transparent;
+  color: var(--buttonText);
+  text-align: left;
+  font-size: 12px;
+  font-weight: 800
+}
+
+.sidebar-nav-utility a:hover,
+.sidebar-nav-utility button:hover {
+  background: color-mix(in srgb, var(--accent) 22%, var(--nav));
+  color: var(--buttonText)
+}
+
+.sidebar-nav-utility button {
+  cursor: pointer
+}
+
+@media(max-width:760px) {
+
+  /* One row, one flex system: main and utility items cannot overlap because they are siblings in the same flex flow. */
+  .app-shell>.sidebar {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    height: 60px !important;
+    min-height: 60px !important;
+    max-height: 60px !important;
+    margin: 0 !important;
+    padding: 4px 6px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scrollbar-width: none;
+    border-radius: 0 !important;
+    z-index: 5000 !important;
+    pointer-events: auto !important;
+    box-sizing: border-box !important
+  }
+
+  .sidebar .logo,
+  .sidebar .sidebar-bottom {
+    display: none !important
+  }
+
+  .sidebar-nav {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: stretch !important;
+    justify-content: stretch !important;
+    gap: 4px !important;
+    width: max-content !important;
+    min-width: 100% !important;
+    height: 52px !important;
+    min-height: 52px !important;
+    padding: 0 !important;
+    overflow: visible !important
+  }
+
+  .sidebar-nav-main,
+  .sidebar-nav-utility {
+    display: contents !important
+  }
+
+  .sidebar-nav-main>a,
+  .sidebar-nav-utility>a,
+  .sidebar-nav-utility>button {
+    flex: 0 0 66px !important;
+    width: 66px !important;
+    min-width: 66px !important;
+    max-width: 66px !important;
+    height: 52px !important;
+    min-height: 52px !important;
+    padding: 3px 2px !important;
+    display: grid !important;
+    grid-template-rows: 19px minmax(0, auto) !important;
+    justify-items: center !important;
+    align-content: center !important;
+    gap: 2px !important;
+    border: 0 !important;
+    border-radius: 10px !important;
+    font-size: 9px !important;
+    line-height: 1.05 !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-align: center !important;
+    touch-action: manipulation !important;
+    pointer-events: auto !important
+  }
+
+  .sidebar-nav-main>a svg,
+  .sidebar-nav-utility>a svg,
+  .sidebar-nav-utility>button svg {
+    width: 18px !important;
+    height: 18px !important
+  }
+
+  .sidebar-nav-main>a span,
+  .sidebar-nav-utility>a span,
+  .sidebar-nav-utility>button span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis
+  }
+
+  .sidebar-nav-main>a.active {
+    background: color-mix(in srgb, var(--surface) 15%, transparent) !important;
+    color: var(--buttonText) !important
+  }
+
+  .sidebar-nav-utility a:hover,
+  .sidebar-nav-utility button:hover {
+    background: color-mix(in srgb, var(--accent) 22%, var(--nav));
+    color: var(--buttonText)
+  }
+
+  .app-shell>.main {
+    padding-bottom: 60px !important
+  }
+}
+
+/* v84.5.32: compact staff navigation on desktop and tablet. Keep mobile as the separate bottom-row layout above. */
+@media (min-width:761px) {
+  .app-shell>.sidebar {
+    padding: 14px 10px;
+    gap: 12px
+  }
+
+  .sidebar .logo {
+    padding: 3px 7px 9px
+  }
+
+  .sidebar .logo span {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px
+  }
+
+  .sidebar nav,
+  .sidebar-bottom {
+    gap: 3px
+  }
+
+  .sidebar nav a,
+  .sidebar nav button {
+    min-height: 38px;
+    padding: 7px 9px;
+    gap: 9px;
+    border-radius: 11px;
+    font-size: 12px
+  }
+
+  .sidebar-nav {
+    gap: 6px
+  }
+
+  .sidebar-nav-main {
+    gap: 3px
+  }
+
+  .sidebar-nav-utility {
+    gap: 3px;
+    padding-top: 7px
+  }
+
+  .sidebar-nav-utility a,
+  .sidebar-nav-utility button {
+    min-height: 38px;
+    padding: 7px 9px;
+    border-radius: 11px;
+    font-size: 11px
+  }
+}
+
+@media (min-width:761px) and (max-width:1100px) {
+  .app-shell {
+    grid-template-columns: 216px minmax(0, 1fr)
+  }
+
+  .app-shell>.sidebar {
+    width: 216px
+  }
+
+  .sidebar nav a,
+  .sidebar nav button {
+    min-height: 36px;
+    padding: 6px 8px;
+    font-size: 11px
+  }
+
+  .sidebar-nav-utility a,
+  .sidebar-nav-utility button {
+    min-height: 36px;
+    padding: 6px 8px;
+    font-size: 10.5px
+  }
+
+  .sidebar .logo strong {
+    font-size: 15px
+  }
+}
+
+/* v84.5.33: keep dashboard navigation dimensions consistent and reserve mobile
+   bottom navigation for primary actions + logout. Profile/public/notification
+   actions stay in the top bar on small screens. */
+@media (min-width:761px) {
+
+  .sidebar nav a,
+  .sidebar nav button {
+    flex: 0 0 auto;
+    min-height: 40px;
+    height: 40px;
+    padding: 7px 9px
+  }
+
+  .sidebar-nav-main>a,
+  .sidebar-nav-main>button {
+    min-height: 40px;
+    height: 40px
+  }
+}
+
+@media (max-width:760px) {
+
+  .sidebar-nav-utility .mobile-nav-profile,
+  .sidebar-nav-utility .mobile-nav-public,
+  .sidebar-nav-utility .mobile-nav-notification {
+    display: none !important
+  }
+
+  .sidebar-nav-utility {
+    display: contents !important
+  }
+
+  .sidebar-nav-utility>button {
+    flex: 1 1 0 !important
+  }
+}
+
+/* v84.5.34 mobile utility cleanup: profile + notifications live in the top avatar cluster. */
+@media(max-width:760px) {
+  .mobile-profile-notify {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px
+  }
+
+  .mobile-profile-notify .notification-bell {
+    position: absolute;
+    right: -5px;
+    bottom: -4px;
+    width: 25px;
+    height: 25px;
+    min-width: 25px;
+    padding: 0;
+    border: 2px solid var(--surface);
+    border-radius: 50%;
+    background: var(--nav);
+    box-shadow: 0 5px 12px var(--color-rgba-23-59-50-20);
+    z-index: 3
+  }
+
+  .mobile-profile-notify .notification-bell svg {
+    width: 13px;
+    height: 13px
+  }
+
+  .mobile-profile-notify .notification-count {
+    right: -5px;
+    top: -5px;
+    min-width: 15px;
+    height: 15px;
+    padding: 0 3px;
+    font-size: 7px;
+    border-width: 2px
+  }
+
+  .mobile-profile-notify .profile-avatar-link {
+    position: relative;
+    z-index: 1
+  }
+}
+
+/* v84.5.36: notification and avatar sit beside each other on mobile, never stacked. */
+@media(max-width:760px) {
+  .mobile-profile-notify {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 7px !important;
+    min-width: auto !important;
+    min-height: 44px !important;
+    position: static !important
+  }
+
+  .mobile-profile-notify .notification-bell {
+    position: relative !important;
+    inset: auto !important;
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    padding: 0 !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 12px !important;
+    background: var(--surface) !important;
+    box-shadow: none !important;
+    z-index: auto !important
+  }
+
+  .mobile-profile-notify .notification-bell svg {
+    width: 19px !important;
+    height: 19px !important
+  }
+
+  .mobile-profile-notify .notification-count {
+    right: -4px !important;
+    top: -5px !important;
+    min-width: 17px !important;
+    height: 17px !important;
+    padding: 0 4px !important;
+    font-size: 8px !important;
+    border-width: 2px !important
+  }
+
+  .mobile-profile-notify .profile-avatar-link {
+    position: relative !important;
+    z-index: auto !important
+  }
+}
+
+/* v84.5.36: compact young-person desktop nav so the three primary destinations stay together. */
+@media(min-width:761px) {
+
+  /* Keep youth primary links packed together instead of stretching grid rows across the sidebar. */
+  .role-youth .sidebar-nav-main {
+    gap: 6px !important;
+    align-content: start !important;
+    grid-auto-rows: max-content !important
+  }
+
+  .role-youth .sidebar-nav-main>a {
+    height: 40px !important;
+    min-height: 40px !important;
+    padding: 7px 9px !important;
+    flex: 0 0 auto !important
+  }
+
+  .role-youth .sidebar-nav {
+    gap: 8px !important
+  }
+}
+
+/* v84.5.41: hard-stop legacy sidebar grid stretching. */
+@media(min-width:761px) {
+  .role-youth .sidebar-nav-main {
+    height: auto !important;
+    flex: 0 0 auto !important;
+    display: grid !important;
+    grid-template-rows: repeat(3, 40px) !important;
+    align-content: start !important;
+    justify-content: stretch !important
+  }
+
+  .role-youth .sidebar-nav-main>a {
+    display: flex !important;
+    box-sizing: border-box !important;
+    flex: 0 0 40px !important;
+    width: 100% !important
+  }
+}
