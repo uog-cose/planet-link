@@ -88,13 +88,18 @@ def staff_accounts(request):
             if target_profile.role=='admin' and not active and User.objects.filter(is_active=True,profile__role='admin',profile__programme=target_profile.programme).exclude(id=target.id).count()==0:
                 return ok({'detail':'The programme must retain at least one active admin'},400)
             target.is_active=active; target.save(update_fields=['is_active'])
-            if not active: RefreshToken.objects.filter(user=target,revoked_at__isnull=True).update(revoked_at=timezone.now())
+            if active:
+                GroupMembership.objects.filter(profile=target_profile,status='inactive',left_at__isnull=True).update(status='active',changed_by=request.user,reason='Account reactivated')
+            else:
+                GroupMembership.objects.filter(profile=target_profile,status='active',left_at__isnull=True).update(status='inactive',changed_by=request.user,reason='Account deactivated')
+                RefreshToken.objects.filter(user=target,revoked_at__isnull=True).update(revoked_at=timezone.now())
             AuditLog.objects.create(actor=request.user,action='account_access_changed',target=str(target.id),detail={'active':active,'role':target_profile.role})
             return ok({'ok':True,'isActive':active})
         if target_profile.role=='admin' and User.objects.filter(is_active=True,profile__role='admin',profile__programme=target_profile.programme).exclude(id=target.id).count()==0:
             return ok({'detail':'The programme must retain at least one active admin'},400)
         previous_username=target.username
         target.is_active=False; target.save(update_fields=['is_active'])
+        GroupMembership.objects.filter(profile=target_profile,status='active',left_at__isnull=True).update(status='inactive',changed_by=request.user,reason='Account deactivated')
         target_profile.deletion_requested=False; target_profile.save(update_fields=['deletion_requested'])
         RefreshToken.objects.filter(user=target,revoked_at__isnull=True).update(revoked_at=timezone.now())
         AuditLog.objects.create(actor=request.user,action='account_deleted',target=str(target.id),detail={'previousUsername':previous_username,'role':target_profile.role,'softDelete':True})
@@ -122,27 +127,34 @@ def staff_groups(request):
     if request.method=='GET':
         items=[]
         for g in Group.objects.filter(programme=programme).prefetch_related('members').order_by('name'):
-            member_qs=g.members.filter(role='youth',programme=programme,user__is_active=True)
+            member_qs=g.members.filter(role='youth',programme=programme)
+            active_member_qs=member_qs.filter(user__is_active=True)
             member_ids=list(member_qs.values_list('id',flat=True))
-            # Derive group XP from the ledger so membership changes cannot leave stale totals.
-            total=max(0,int(XPTransaction.objects.filter(programme=programme,target_id__in=member_ids).aggregate(total=Sum('amount'))['total'] or 0))
+            # The group ledger is immutable. Membership edits must never reassign
+            # XP earned by a young person before they joined or after they left.
+            contribution_total=GroupXPContribution.objects.filter(group=g).aggregate(total=Sum('amount'))['total'] or 0
+            total=max(0,int(g.historical_xp or 0)+int(contribution_total))
             if g.xp != total:
                 Group.objects.filter(pk=g.pk).update(xp=total)
                 g.xp=total
+            eligible_qs=member_qs if g.include_inactive_members else active_member_qs
+            eligible_count=eligible_qs.count()
+            average_xp=round(total/eligible_count,2) if eligible_count else 0
             tiers=g.tier_targets if isinstance(g.tier_targets,list) else []
             valid_tiers=sorted([x for x in tiers if isinstance(x,dict) and str(x.get('name','')).strip() and str(x.get('xp','')).isdigit() and int(x.get('xp',0))>0],key=lambda x:int(x['xp']))
             next_tier=next((x for x in valid_tiers if total<int(x['xp'])),None)
-            items.append({'id':g.id,'name':g.name,'xp':total,'memberIds':member_ids,'memberNames':list(member_qs.values_list('gamertag',flat=True)),'tierTargets':valid_tiers,'nextTier':next_tier,'pointsToNext':max(0,int(next_tier['xp'])-total) if next_tier else 0,'progressPercent':min(100,round(total*100/int(next_tier['xp']))) if next_tier else 100})
-        return ok({'items':items})
+            items.append({'id':g.id,'name':g.name,'xp':total,'memberIds':member_ids,'memberNames':list(member_qs.values_list('gamertag',flat=True)),'activeMemberCount':active_member_qs.count(),'eligibleMembers':eligible_count,'averageXpPerMember':average_xp,'includeInactiveMembers':g.include_inactive_members,'tierTargets':valid_tiers,'nextTier':next_tier,'pointsToNext':max(0,int(next_tier['xp'])-total) if next_tier else 0,'progressPercent':min(100,round(total*100/int(next_tier['xp']))) if next_tier else 100})
+        return ok({'items':items,'groupScoringConfig':programme.group_scoring_config})
     body=parse_json(request) or {}; name=str(body.get('name','')).strip()[:120]
     if not name:return ok({'detail':'Group name is required'},400)
     ids=body.get('memberIds',[]) or []
     if not isinstance(ids,list):return ok({'detail':'Member selection must be a list'},400)
     try: ids=[safe_int(x,minimum=1) for x in ids]
     except ValueError:return ok({'detail':'Member selection contains an invalid player id'},400)
-    members=Profile.objects.filter(id__in=ids,role='youth',programme=programme)
+    members=Profile.objects.filter(id__in=ids,role='youth',programme=programme,user__is_active=True)
     group=Group.objects.create(name=name,programme=programme); group.members.set(members)
-    group.xp=max(0,int(XPTransaction.objects.filter(programme=programme,target__in=members).aggregate(total=Sum('amount'))['total'] or 0))
+    GroupMembership.objects.filter(group=group,status='active',profile__in=members).update(changed_by=request.user)
+    group.xp=0
     group.save(update_fields=['xp'])
     AuditLog.objects.create(actor=request.user,action='group_created',target=str(group.id),detail={'memberIds':list(members.values_list('id',flat=True))})
     return ok({'id':group.id,'name':group.name,'memberIds':list(members.values_list('id',flat=True))},201)
@@ -197,14 +209,42 @@ def assign_group_members(request):
     if not isinstance(member_ids,list):return ok({'detail':'Member selection must be a list'},400)
     try: member_ids=[safe_int(x,minimum=1) for x in member_ids]
     except ValueError:return ok({'detail':'Member selection contains an invalid player id'},400)
-    previous_ids=set(group.members.filter(role='youth').values_list('id',flat=True))
-    members=Profile.objects.filter(id__in=member_ids,role='youth',programme=group.programme,user__is_active=True); group.members.set(members)
-    # Recalculate from the XP ledger after membership edits, rather than trusting a cached counter.
-    current_ids=list(members.values_list('id',flat=True))
-    group.xp=max(0,int(XPTransaction.objects.filter(programme=group.programme,target_id__in=current_ids).aggregate(total=Sum('amount'))['total'] or 0))
-    group.save(update_fields=['xp'])
+    include_inactive_members=body.get('includeInactiveMembers', group.include_inactive_members)
+    change_reason=str(body.get('reason','')).strip()[:240]
+    if not isinstance(include_inactive_members, bool):
+        return ok({'detail':'Include inactive members must be true or false'},400)
+    with transaction.atomic():
+        group=Group.objects.select_for_update().get(pk=group.pk)
+        if group.include_inactive_members != include_inactive_members:
+            GroupScoringPolicyHistory.objects.create(
+                group=group, include_inactive_members=include_inactive_members, changed_by=request.user,
+            )
+        group.include_inactive_members=include_inactive_members
+        previous_ids=set(group.members.filter(role='youth').values_list('id',flat=True))
+        members=Profile.objects.filter(id__in=member_ids,role='youth',programme=group.programme).filter(Q(user__is_active=True)|Q(id__in=previous_ids))
+        current_ids=set(members.values_list('id',flat=True))
+        removed_ids=previous_ids-current_ids
+        if removed_ids:
+            for removed_id in removed_ids:
+                has_other_group = Profile.objects.filter(
+                    pk=removed_id, groups__programme=group.programme,
+                ).exclude(groups=group).exists()
+                GroupMembership.objects.filter(group=group,profile_id=removed_id,status__in=['active','inactive']).update(
+                    status='transferred' if has_other_group else 'withdrawn',
+                    left_at=timezone.now(), changed_by=request.user,
+                    reason=change_reason or ('Transferred to another group' if has_other_group else 'Removed from group by staff'),
+                )
+        group.members.set(members)
+        GroupMembership.objects.filter(group=group,status='active',profile_id__in=current_ids,changed_by__isnull=True).update(changed_by=request.user)
+        if change_reason:
+            GroupMembership.objects.filter(group=group,status='active',profile_id__in=current_ids).update(reason=change_reason)
+        # Recompute only from the group's own immutable contribution ledger.
+        contribution_total=GroupXPContribution.objects.filter(group=group).aggregate(total=Sum('amount'))['total'] or 0
+        group.xp=max(0,int(group.historical_xp or 0)+int(contribution_total))
+        group.save(update_fields=['xp','include_inactive_members'])
     newly_added=members.exclude(id__in=previous_ids)
     for member in newly_added: create_notification(profile=member,title='Group updated',body=f'You are now in {group.name}.',kind='group',url='/')
+    AuditLog.objects.create(actor=request.user,programme=group.programme,action='group_membership_updated',target=str(group.id),detail={'addedProfileIds':list(newly_added.values_list('id',flat=True)),'removedProfileIds':sorted(removed_ids),'includeInactiveMembers':include_inactive_members,'reason':change_reason})
     return ok({'ok':True,'memberIds':list(members.values_list('id',flat=True)),'notifiedCount':newly_added.count()})
 
 @require_http_methods(["GET","POST"])

@@ -81,7 +81,7 @@
   border: 1px solid var(--border)
 }
 
-.pending-empty,
+
 .public-points-empty {
   min-height: 120px;
   padding: 18px;
@@ -316,17 +316,11 @@
   font-weight: 800
 }
 
-.quest-welcome {
-  min-height: 230px
-}
 
-.quest-welcome-art {
-  height: 220px
-}
 
-.quest-welcome-art img {
-  width: min(300px, 100%)
-}
+
+
+
 
 .activity-page-card {
   min-width: 0
@@ -345,32 +339,15 @@
   min-height: 130px
 }
 
-.public-riser-v3 {
-  min-width: 0;
-  grid-template-columns: 26px minmax(0, 1fr) auto
-}
 
-.public-riser-v3>div {
-  min-width: 0;
-  overflow: hidden
-}
 
-.public-riser-v3 strong,
-.public-riser-v3 small {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap
-}
 
-.public-riser-v3>b {
-  white-space: nowrap
-}
 
-.public-riser-v3>i {
-  grid-column: 2 / -1;
-  min-width: 0
-}
+
+
+
+
+
 
 .public-v3-grid {
   align-items: start
@@ -434,33 +411,13 @@
   margin: 12px auto
 }
 
-.points-qr-data {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 7px;
-  margin-top: 8px
-}
 
-.points-qr-data span {
-  display: grid;
-  gap: 2px;
-  padding: 8px;
-  border-radius: 12px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  text-align: center
-}
 
-.points-qr-data strong {
-  font-size: 8px;
-  text-transform: uppercase;
-  color: var(--muted);
-  letter-spacing: .08em
-}
 
-.points-qr-data b {
-  font-size: 10px
-}
+
+
+
+
 
 .points-qr-backdrop {
   padding: 12px
@@ -487,17 +444,11 @@
     grid-template-columns: 1fr
   }
 
-  .points-qr-data {
-    grid-template-columns: 1fr 1fr
-  }
+  
 
-  .quest-welcome {
-    min-height: 210px
-  }
+  
 
-  .quest-welcome-art {
-    height: 170px
-  }
+  
 }
 
 @media(max-width:640px) {
@@ -511,9 +462,7 @@
     padding: 12px
   }
 
-  .points-qr-data {
-    grid-template-columns: 1fr 1fr
-  }
+  
 
   .points-qr-modal {
     padding: 18px
@@ -524,26 +473,15 @@
     height: 190px
   }
 
-  .quest-welcome {
-    grid-template-columns: 1fr
-  }
+  
 
-  .quest-welcome-art {
-    display: none
-  }
+  
 
-  .public-riser-v3 {
-    grid-template-columns: 22px minmax(0, 1fr)
-  }
+  
 
-  .public-riser-v3>b {
-    grid-column: 2;
-    justify-self: start
-  }
+  
 
-  .public-riser-v3>i {
-    grid-column: 2
-  }
+  
 }
 
 /* v84.5.3 senior UX pass — solid, calm surfaces; no decorative gradients. */
@@ -565,8 +503,7 @@
 .role-admin .page,
 .games-page,
 .groups-page,
-.worker-config-page,
-.accounts-page {
+.worker-config-page{
   color: var(--text)
 }
 
@@ -667,15 +604,15 @@
   gap: 10px
 }
 
-.activity-page-table .activity:nth-child(4n+1) {
+.activity-page-table .activity:nth-child(4n/**/+1) {
   background: var(--q-mint-soft)
 }
 
-.activity-page-table .activity:nth-child(4n+2) {
+.activity-page-table .activity:nth-child(4n/**/+2) {
   background: var(--q-sun-soft)
 }
 
-.activity-page-table .activity:nth-child(4n+3) {
+.activity-page-table .activity:nth-child(4n/**/+3) {
   background: var(--q-lilac-soft)
 }
 
@@ -756,11 +693,11 @@
   color: var(--text)
 }
 
-.notification-card:nth-child(4n+2) .notification-card-icon {
+.notification-card:nth-child(4n/**/+2) .notification-card-icon {
   background: var(--tile2)
 }
 
-.notification-card:nth-child(4n+3) .notification-card-icon {
+.notification-card:nth-child(4n/**/+3) .notification-card-icon {
   background: var(--tile3)
 }
 
@@ -870,19 +807,19 @@
   min-height: 170px
 }
 
-.games-page .challenge-row:nth-child(5n+1) {
+.games-page .challenge-row:nth-child(5n/**/+1) {
   background: var(--q-mint-soft)
 }
 
-.games-page .challenge-row:nth-child(5n+2) {
+.games-page .challenge-row:nth-child(5n/**/+2) {
   background: var(--q-sun-soft)
 }
 
-.games-page .challenge-row:nth-child(5n+3) {
+.games-page .challenge-row:nth-child(5n/**/+3) {
   background: var(--q-lilac-soft)
 }
 
-.games-page .challenge-row:nth-child(5n+4) {
+.games-page .challenge-row:nth-child(5n/**/+4) {
   background: var(--q-aqua-soft)
 }
 
@@ -959,15 +896,15 @@
   gap: 11px
 }
 
-.groups-list-compact .group-compact-card:nth-child(4n+1) {
+.groups-list-compact .group-compact-card:nth-child(4n/**/+1) {
   background: var(--q-mint-soft)
 }
 
-.groups-list-compact .group-compact-card:nth-child(4n+2) {
+.groups-list-compact .group-compact-card:nth-child(4n/**/+2) {
   background: var(--q-sun-soft)
 }
 
-.groups-list-compact .group-compact-card:nth-child(4n+3) {
+.groups-list-compact .group-compact-card:nth-child(4n/**/+3) {
   background: var(--q-lilac-soft)
 }
 
@@ -997,15 +934,15 @@
   gap: 12px
 }
 
-.skill-map .skill-node:nth-child(4n+1) {
+.skill-map .skill-node:nth-child(4n/**/+1) {
   background: var(--q-mint-soft)
 }
 
-.skill-map .skill-node:nth-child(4n+2) {
+.skill-map .skill-node:nth-child(4n/**/+2) {
   background: var(--q-sun-soft)
 }
 
-.skill-map .skill-node:nth-child(4n+3) {
+.skill-map .skill-node:nth-child(4n/**/+3) {
   background: var(--q-lilac-soft)
 }
 
@@ -1346,9 +1283,7 @@
 }
 
 /* Worker dashboard: QR takes the utility slot; all cards use the same color rhythm. */
-.worker-qr-card {
-  min-height: 260px
-}
+
 
 .worker-qr-card .points-qr-card {
   background: transparent;
@@ -1575,42 +1510,21 @@
   background: var(--q-aqua-soft)
 }
 
-.youth-home-senior .quest-welcome {
-  background: var(--q-mint-soft)
-}
 
-.youth-home-senior .quest-progress-card {
-  background: var(--q-sun-soft)
-}
 
-.youth-home-senior .quest-next-card {
-  background: var(--q-lilac-soft)
-}
 
-.youth-home-senior .quest-activity-card {
-  background: var(--q-aqua-soft)
-}
 
-.youth-home-senior .quest-event-card,
-.youth-home-senior .quest-empty-event {
-  background: var(--q-peach-soft)
-}
 
-.youth-home-senior .dashboard-qr-minimized {
-  background: transparent
-}
 
-.quest-welcome-art {
-  background: transparent
-}
 
-.quest-welcome-art img {
-  width: min(220px, 100%);
-  height: 150px;
-  object-fit: cover;
-  border-radius: 20px;
-  box-shadow: none
-}
+
+
+
+
+
+
+
+
 
 .notifications-page {
   position: fixed;

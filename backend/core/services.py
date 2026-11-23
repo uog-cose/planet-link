@@ -6,7 +6,7 @@ from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 from .config import CONFIG
-from .models import XPTransaction, Notification, PushSubscription, Reward, RewardAssignment, Badge, ProfileBadge, GroupTierUnlock
+from .models import XPTransaction, Notification, PushSubscription, Reward, RewardAssignment, Badge, ProfileBadge, GroupTierUnlock, DailyLogin, LoginStreakAward, Profile, GroupXPContribution
 
 logger = logging.getLogger('youthquest.notifications')
 
@@ -108,6 +108,9 @@ def award_xp(*, target, actor, amount, source, reason, group_multiplier=1.0, not
         unlocked_group_tiers=[]
         for group in target.groups.filter(programme=programme).select_for_update().prefetch_related('members'):
             previous_group_xp=int(group.xp or 0)
+            GroupXPContribution.objects.get_or_create(
+                group=group, transaction=tx, defaults={'amount': amount},
+            )
             group.xp = max(0, group.xp + amount)
             group.save(update_fields=['xp'])
             tiers=group.tier_targets if isinstance(group.tier_targets,list) else []
@@ -158,26 +161,161 @@ def award_xp(*, target, actor, amount, source, reason, group_multiplier=1.0, not
     return tx, target
 
 
+
+def process_daily_login_reward(profile):
+    """Award a youth member's daily login XP and any newly reached streak milestone.
+
+    The profile row lock and unique daily-login constraint make this safe under
+    concurrent login requests and retries. Streak dates use the programme's
+    configured timezone, falling back to Django's configured timezone.
+    """
+    if not profile or profile.role != 'youth' or not profile.programme_id:
+        return {'awarded': False, 'streak': 0, 'dailyXp': 0, 'bonusXp': 0}
+    with transaction.atomic():
+        locked = Profile.objects.select_for_update().select_related('programme', 'user').get(pk=profile.pk)
+        programme = locked.programme
+        config = programme.login_reward_config if isinstance(programme.login_reward_config, dict) else {}
+        if not config.get('enabled', True):
+            return {'awarded': False, 'streak': 0, 'dailyXp': 0, 'bonusXp': 0}
+        from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+        try:
+            tz = ZoneInfo(str(config.get('timezone') or settings.TIME_ZONE))
+        except (ZoneInfoNotFoundError, ValueError):
+            tz = timezone.get_current_timezone()
+        today = timezone.localtime(timezone.now(), tz).date()
+        login, created = DailyLogin.objects.get_or_create(
+            profile=locked, local_date=today, defaults={'programme': programme}
+        )
+        if not created:
+            return {'awarded': False, 'streak': _login_streak(locked, programme, today), 'dailyXp': 0, 'bonusXp': 0}
+        streak = _login_streak(locked, programme, today)
+        start_date = today - timedelta(days=streak - 1)
+        try:
+            daily_xp = int(config.get('daily_xp', 10))
+        except (TypeError, ValueError):
+            daily_xp = 10
+        daily_xp = max(0, min(daily_xp, 5000))
+        if daily_xp:
+            award_xp(target=locked, actor=locked.user, amount=daily_xp, source='daily_login', reason='Daily login reward', notify=True)
+        bonus_xp = 0
+        milestones = config.get('milestones', []) if isinstance(config.get('milestones', []), list) else []
+        for rule in milestones:
+            if not isinstance(rule, dict):
+                continue
+            try:
+                threshold = int(rule.get('days', 0))
+                bonus = int(rule.get('bonus_xp', 0))
+            except (TypeError, ValueError):
+                continue
+            if threshold != streak or bonus <= 0:
+                continue
+            _, milestone_created = LoginStreakAward.objects.get_or_create(
+                profile=locked, programme=programme, streak_start=start_date, threshold=threshold,
+                defaults={'bonus_xp': bonus},
+            )
+            if milestone_created:
+                award_xp(target=locked, actor=locked.user, amount=bonus, source='login_streak',
+                         reason=f'{threshold}-day login streak bonus', notify=True)
+                bonus_xp += bonus
+        return {'awarded': bool(daily_xp or bonus_xp), 'streak': streak, 'dailyXp': daily_xp, 'bonusXp': bonus_xp}
+
+
+def _login_streak(profile, programme, today):
+    dates = set(DailyLogin.objects.filter(profile=profile, programme=programme,
+                                           local_date__lte=today).values_list('local_date', flat=True))
+    streak = 0
+    cursor = today
+    while cursor in dates:
+        streak += 1
+        cursor -= timedelta(days=1)
+    return streak
+
+def programme_local_date(programme, moment=None):
+    """Return a date in the programme's configured reward timezone."""
+    from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+    config = programme.login_reward_config if programme and isinstance(programme.login_reward_config, dict) else {}
+    try:
+        tz = ZoneInfo(str(config.get('timezone') or settings.TIME_ZONE))
+    except (ZoneInfoNotFoundError, ValueError):
+        tz = timezone.get_current_timezone()
+    return timezone.localtime(moment or timezone.now(), tz).date()
+
+
 def attendance_streak_multiplier(programme, streak):
+    """Return the highest multiplier for consecutive attended programme events."""
     rules = programme.streak_rules if programme and isinstance(programme.streak_rules, list) else []
     multiplier = 1.0
     for rule in rules:
         try:
-            days = int(rule.get('days', 0)); value = float(rule.get('multiplier', 1))
-            if days > 0 and value >= 1 and streak >= days: multiplier = max(multiplier, value)
+            events = int(rule.get('events', rule.get('days', 0)))
+            value = float(rule.get('multiplier', 1))
+            if events > 0 and value >= 1 and streak >= events:
+                multiplier = max(multiplier, value)
         except (TypeError, ValueError, AttributeError):
             continue
     return multiplier
 
 
-def attendance_reward(profile, session):
-    programme=session.programme; today=timezone.localdate()
-    attended_dates=set(profile.attendances.values_list('attended_at__date',flat=True))
-    if today not in attended_dates: attended_dates.add(today)
-    cursor=today; streak=0
-    while cursor in attended_dates:
-        streak += 1; cursor -= timedelta(days=1)
-    profile.streak=streak; profile.save(update_fields=['streak'])
-    base=max(0,int(programme.attendance_points or 0)); multiplier=attendance_streak_multiplier(programme,streak)
-    awarded=int(round(base*multiplier)) if base else 0
-    return awarded,streak,multiplier
+def event_attendance_streak(profile, programme=None, moment=None):
+    """Count the current run of consecutive programme events attended.
+
+    Every non-cancelled event in the programme is an opportunity for every
+    young person. Calendar gaps do not matter. A missed event breaks the run
+    only after its scheduled end; cancelled events never affect it.
+    """
+    from core.models import EventCheckIn, MapEvent
+    programme = programme or (profile.programme if profile else None)
+    if not profile or not programme:
+        return 0
+    now = moment or timezone.now()
+    events = MapEvent.objects.filter(
+        programme=programme, start_at__lte=now,
+    ).exclude(status='cancelled').order_by('start_at', 'id')
+    attended_ids = set(EventCheckIn.objects.filter(
+        participant=profile, event__in=events, voided_at__isnull=True,
+    ).values_list('event_id', flat=True))
+    streak = 0
+    for event in events:
+        if event.id in attended_ids:
+            streak += 1
+            continue
+        event_end = event.ended_at or event.end_at
+        if event_end and event_end <= now:
+            streak = 0
+    return streak
+
+
+def recalculate_event_attendance_streaks(profile, programme=None, moment=None):
+    """Refresh stored streak snapshots after an audited attendance correction.
+
+    Previously awarded XP and multiplier snapshots are intentionally immutable.
+    Only the attendance streak count shown in event history is recalculated.
+    """
+    from core.models import EventCheckIn, MapEvent
+    programme = programme or (profile.programme if profile else None)
+    if not profile or not programme:
+        return 0
+    now = moment or timezone.now()
+    events = list(MapEvent.objects.filter(
+        programme=programme, start_at__lte=now,
+    ).exclude(status='cancelled').order_by('start_at', 'id'))
+    checkins = {
+        row.event_id: row
+        for row in EventCheckIn.objects.filter(
+            participant=profile, event__in=events, voided_at__isnull=True,
+        )
+    }
+    streak = 0
+    for event in events:
+        checkin = checkins.get(event.id)
+        if checkin:
+            streak += 1
+            if checkin.streak_count != streak:
+                EventCheckIn.objects.filter(pk=checkin.pk).update(streak_count=streak)
+            continue
+        event_end = event.ended_at or event.end_at
+        if event_end and event_end <= now:
+            streak = 0
+    return streak
+
+

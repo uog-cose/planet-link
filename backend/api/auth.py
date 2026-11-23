@@ -1,4 +1,5 @@
 from .common import *
+from core.services import process_daily_login_reward
 
 @require_http_methods(["GET"])
 def health(request):
@@ -24,6 +25,8 @@ def login(request):
     if not user or not user.is_active or not hasattr(user, "profile"):
         return ok({"detail": "Invalid credentials"}, 401)
     dj_login(request, user)
+    if user.profile.role == "youth":
+        process_daily_login_reward(user.profile)
     request.session.set_expiry(None if remember_me else 0)
     request.session["remember_me"] = remember_me
     raw, _ = issue_refresh_token(user)

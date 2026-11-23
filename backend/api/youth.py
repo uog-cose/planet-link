@@ -1,5 +1,6 @@
 from .common import *
 from core.game_engine import GAME_TYPES, make_challenge, score_attempt, xp_for_performance, game_specific_xp
+from core.services import programme_local_date, attendance_streak_multiplier, event_attendance_streak
 from django.http import FileResponse
 
 @auth_required
@@ -10,7 +11,27 @@ def dashboard(request):
     programme = active_programme_for(p)
     if not programme:
         return ok({'detail': 'No active programme'}, 400)
-    groups = [{"name": g.name, "xp": g.xp, "targetXp": programme.target_xp, "progress": round(min(100, max(0, (g.xp / max(1, programme.target_xp)) * 100)), 1)} for g in p.groups.filter(programme=programme)]
+    scoring_config = programme.group_scoring_config if isinstance(programme.group_scoring_config, dict) else {}
+    minimum_group_size = max(1, int(scoring_config.get('minimum_group_size', 2) or 2))
+    group_rows = []
+    for group in Group.objects.filter(programme=programme).prefetch_related('members'):
+        eligible = group.members.filter(role='youth', programme=programme)
+        if not group.include_inactive_members:
+            eligible = eligible.filter(user__is_active=True)
+        eligible_count = eligible.count()
+        collective_xp = int(group.xp or 0)
+        group_rows.append({
+            'id': group.id, 'name': group.name, 'xp': collective_xp,
+            'eligibleMembers': eligible_count,
+            'averageXpPerMember': round(collective_xp / eligible_count, 2) if eligible_count else 0,
+            'ranked': eligible_count >= minimum_group_size,
+            'includeInactiveMembers': group.include_inactive_members,
+            'targetXp': programme.target_xp,
+            'progress': round(min(100, max(0, (collective_xp / max(1, programme.target_xp)) * 100)), 1),
+        })
+    ranked_groups = sorted([g for g in group_rows if g['ranked']], key=lambda g: (-g['averageXpPerMember'], g['name'].lower(), g['id']))
+    group_ranks = {g['id']: index for index, g in enumerate(ranked_groups, 1)}
+    groups = [{**g, 'rank': group_ranks.get(g['id'])} for g in group_rows if p.groups.filter(pk=g['id']).exists()]
     assigned_skill_ids = SkillAssignment.objects.filter(active=True).filter(models.Q(target_profile=p)|models.Q(target_group__members=p,target_group__programme=programme)).values_list('skill_id', flat=True)
     profile_skills = p.profileskill_set.filter(skill_id__in=assigned_skill_ids).filter(models.Q(skill__programme=programme)|models.Q(skill__programme__isnull=True)).select_related("skill")
     skills = []
@@ -67,10 +88,11 @@ def dashboard(request):
             personal_bests.append({'kind':kind,'label':label,'score':float(row.raw_score or 0),'unit':unit,'gameTitle':row.game.title})
     points_assigned=list(p.xp_transactions.filter(programme=programme,source__in=['staff','staff-award','staff-award-approved','qr-approved','point-award','qr-points']).order_by('-created_at')[:10].values('amount','reason','created_at','source'))
     attendance_dates=list(p.attendances.filter(session__programme=programme).order_by('-attendance_date').values_list('attendance_date',flat=True))
-    today=timezone.localdate()
-    attendance_set={str(d) for d in attendance_dates}
-    attendance_last7=[1 if (today-timedelta(days=i)) in attendance_dates else 0 for i in range(7)]
-    attendance_last28=[1 if (today-timedelta(days=i)) in attendance_dates else 0 for i in range(28)]
+    today=programme_local_date(programme, now)
+    attendance_date_set = set(attendance_dates)
+    week_start = today - timedelta(days=today.weekday())
+    attendance_last7=[1 if (week_start+timedelta(days=i)) in attendance_date_set else 0 for i in range(7)]
+    attendance_last28=[1 if (today-timedelta(days=i)) in attendance_date_set else 0 for i in range(28)]
     attendance_trend=[]
     for week_index in range(11,-1,-1):
         week_end=today-timedelta(days=week_index*7)
@@ -78,7 +100,55 @@ def dashboard(request):
         attended=sum(1 for d in attendance_dates if week_start <= d <= week_end)
         attendance_trend.append({'label':week_end.strftime('%d %b'),'attended':attended})
     events=event_summary(programme)
-    return ok({"profile": {"gamertag": p.gamertag, "avatar": p.avatar, "avatarImageUrl": (request.build_absolute_uri(f'/api/profile/avatar-image/{p.id}/') if p.avatar_image else None), "milestoneTier": milestone_tier(p), "milestoneColor": milestone_color(p), "currentXp": p.current_xp, "lifetimeXp": p.lifetime_xp, "level": p.level, "streak": current_attendance_streak(p), "groupXp": sum(int(g.get('xp',0) or 0) for g in groups)}, "groups": groups, "skills": skills, "badges": badges, "personalBests": personal_bests, "achievementStats": {"unlocked": achievement_unlocked, "total": achievement_total}, "awards": awards, "notifications": notes, "challenges": challenges, "drawings": drawings, "recentXp": recent_xp, "attendanceStats":{"last7":attendance_last7,"last28":attendance_last28,"daysLast7":sum(attendance_last7),"daysLast28":sum(attendance_last28),"trend":attendance_trend}, "rewardCards": reward_cards, "rewardAvailable": reward_available, "activityTabs":{"attendance":list(p.attendances.filter(session__programme=programme).order_by("-attended_at")[:10].values("attended_at","attendance_date")),"scratch":list(p.scratch_claims.filter(reward__programme=programme).order_by("-claimed_at")[:10].values("award_name","amount","claimed_at")),"games":game_activity,"pointsAssigned":points_assigned,"publicPoints":list(p.xp_transactions.filter(programme=programme,source="public").order_by("-created_at")[:10].values("amount","reason","created_at"))}, "programme": programme and {"name":programme.name,"location":programme.location,"theme":programme.theme,"target_xp":programme.target_xp,"theme_config":programme.theme_config,"milestones":programme.milestones,"dashboardConfig":((programme.public_config or {}).get("youthDashboard", {}) if isinstance(programme.public_config,dict) else {})}, **events})
+    login_config = programme.login_reward_config if isinstance(programme.login_reward_config, dict) else {}
+    login_today = programme_local_date(programme, now)
+    login_dates = set(p.daily_logins.filter(programme=programme, local_date__lte=login_today).values_list('local_date', flat=True))
+    last_login = max(login_dates) if login_dates else None
+    login_streak = 0
+    if last_login and last_login >= login_today - timedelta(days=1):
+        cursor = last_login
+        while cursor in login_dates:
+            login_streak += 1
+            cursor -= timedelta(days=1)
+    logged_in_today = login_today in login_dates
+    next_login_streak = login_streak + 1
+    login_milestones = login_config.get('milestones', []) if isinstance(login_config.get('milestones', []), list) else []
+    valid_login_rules = sorted([x for x in login_milestones if isinstance(x, dict)], key=lambda x: int(x.get('days', 0) or 0))
+    next_login_rule = next((r for r in valid_login_rules if int(r.get('days', 0) or 0) > login_streak), None)
+    next_login_bonus = int(next_login_rule.get('bonus_xp', 0) or 0) if next_login_rule and int(next_login_rule.get('days', 0) or 0) == next_login_streak else 0
+    login_rewards_enabled = bool(login_config.get('enabled', True))
+    daily_login_xp = max(0, int(login_config.get('daily_xp', 10) or 0)) if login_rewards_enabled else 0
+    login_streak_payload = {
+        'current': login_streak, 'enabled': login_rewards_enabled, 'dailyXp': daily_login_xp,
+        'loggedInToday': logged_in_today, 'nextMilestone': next_login_rule if login_rewards_enabled else None,
+        'milestoneWithinDays': max(0, int(next_login_rule.get('days', 0) or 0) - login_streak) if next_login_rule else None,
+        'nextRewardXp': daily_login_xp + next_login_bonus if login_rewards_enabled else 0,
+    }
+
+    attendance_streak = event_attendance_streak(p, programme, now)
+    current_event = MapEvent.objects.filter(
+        programme=programme, status__in=['scheduled', 'current'],
+        start_at__lte=now, end_at__gt=now,
+    ).order_by('start_at', 'id').first()
+    attended_current_event = bool(current_event and EventCheckIn.objects.filter(event=current_event, participant=p).exists())
+    next_attendance_streak = attendance_streak + 1
+    attendance_rules = programme.streak_rules if isinstance(programme.streak_rules, list) else []
+    valid_attendance_rules = sorted(
+        [x for x in attendance_rules if isinstance(x, dict)],
+        key=lambda x: int(x.get('events', x.get('days', 0)) or 0),
+    )
+    current_attendance_multiplier = attendance_streak_multiplier(programme, attendance_streak)
+    next_attendance_multiplier = attendance_streak_multiplier(programme, next_attendance_streak)
+    next_attendance_rule = next((r for r in valid_attendance_rules if int(r.get('events', r.get('days', 0)) or 0) > attendance_streak), None)
+    attendance_base_xp = max(0, int(programme.attendance_points or 0))
+    attendance_streak_payload = {
+        'current': attendance_streak, 'hasAttendedCurrentEvent': attended_current_event, 'hasAttendedToday': attended_current_event,
+        'baseXp': attendance_base_xp, 'currentMultiplier': current_attendance_multiplier,
+        'nextMultiplier': next_attendance_multiplier, 'nextMilestone': next_attendance_rule,
+        'milestoneWithinEvents': max(0, int(next_attendance_rule.get('events', next_attendance_rule.get('days', 0)) or 0) - attendance_streak) if next_attendance_rule else None,
+        'nextRewardXp': int(round(attendance_base_xp * next_attendance_multiplier)),
+    }
+    return ok({"loginStreak": login_streak_payload, "onsiteAttendanceStreak": attendance_streak_payload, "profile": {"gamertag": p.gamertag, "avatar": p.avatar, "avatarImageUrl": (request.build_absolute_uri(f'/api/profile/avatar-image/{p.id}/') if p.avatar_image else None), "milestoneTier": milestone_tier(p), "milestoneColor": milestone_color(p), "currentXp": p.current_xp, "lifetimeXp": p.lifetime_xp, "level": p.level, "streak": current_attendance_streak(p), "groupXp": sum(int(g.get('xp',0) or 0) for g in groups)}, "groups": groups, "skills": skills, "badges": badges, "personalBests": personal_bests, "achievementStats": {"unlocked": achievement_unlocked, "total": achievement_total}, "awards": awards, "notifications": notes, "challenges": challenges, "drawings": drawings, "recentXp": recent_xp, "attendanceStats":{"last7":attendance_last7,"last28":attendance_last28,"daysLast7":sum(attendance_last7),"daysLast28":sum(attendance_last28),"trend":attendance_trend}, "rewardCards": reward_cards, "rewardAvailable": reward_available, "activityTabs":{"attendance":list(p.attendances.filter(session__programme=programme).order_by("-attended_at")[:10].values("attended_at","attendance_date")),"scratch":list(p.scratch_claims.filter(reward__programme=programme).order_by("-claimed_at")[:10].values("award_name","amount","claimed_at")),"games":game_activity,"pointsAssigned":points_assigned,"publicPoints":list(p.xp_transactions.filter(programme=programme,source="public").order_by("-created_at")[:10].values("amount","reason","created_at"))}, "programme": programme and {"name":programme.name,"location":programme.location,"theme":programme.theme,"target_xp":programme.target_xp,"theme_config":programme.theme_config,"milestones":programme.milestones,"dashboardConfig":((programme.public_config or {}).get("youthDashboard", {}) if isinstance(programme.public_config,dict) else {})}, **events})
 
 @require_http_methods(["POST"])
 def xp(request):

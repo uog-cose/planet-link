@@ -62,3 +62,8 @@ See [SECURITY.md](SECURITY.md). Never commit `.env` or `.env.production`; both a
 ## Project traceability
 
 See [JIRA_TRACEABILITY.md](JIRA_TRACEABILITY.md) for issue-to-implementation traceability.
+
+
+## Reward rules
+
+See [docs/reward-rules.md](docs/reward-rules.md) for daily login rewards, event attendance streaks, configuration, permissions, and deployment notes.
