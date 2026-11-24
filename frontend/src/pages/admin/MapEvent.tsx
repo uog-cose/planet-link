@@ -26,19 +26,22 @@ const localDateTime = (offsetMs = 0) => {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}T${p(d.getHours())}:${p(d.getMinutes())}`;
 };
 const EDINBURGH = { lat: 55.9533, lng: -3.1883 };
-const newEvent = () => ({
-  title: "",
-  description: "",
-  locationName: "",
-  postcode: "",
-  address: "",
-  lat: EDINBURGH.lat,
-  lng: EDINBURGH.lng,
-  startAt: "NOW",
-  endAt: localDateTime(86400000),
-  visible: true,
-  pinEnabled: true,
-});
+const newEvent = () => {
+  const startAt = localDateTime();
+  return {
+    title: "",
+    description: "",
+    locationName: "",
+    postcode: "",
+    address: "",
+    lat: EDINBURGH.lat,
+    lng: EDINBURGH.lng,
+    startAt,
+    endAt: localDateTime(86400000),//plus24Hours(startAt),
+    visible: true,
+    pinEnabled: true,
+  };
+};
 const fmt = (x: any) =>
   x
     ? new Date(x).toLocaleString("en-GB", {
@@ -53,12 +56,31 @@ const localInput = (value: any) => {
   const p = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}T${p(d.getHours())}:${p(d.getMinutes())}`;
 };
+// const plus24Hours = (value: string) => {
+//   const base = value === "NOW" ? localDateTime() : value;
+//   const match = String(base).match(
+//     /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/
+//   );
+//   if (!match) return localDateTime(86400000);
+
+//   const [, y, mo, day, hour, minute] = match;
+//   const d = new Date(
+//     Number(y), Number(mo) - 1, Number(day),
+//     Number(hour), Number(minute), 0, 0
+//   );
+//   d.setTime(d.getTime() + 86400000);
+//   return localInput(d.getTime());
+// };
 const plus24Hours = (value: string) => {
-  if (value === "NOW") return localDateTime(86400000);
-  const d = new Date(`${value}:00`);
-  return Number.isNaN(d.getTime())
-    ? localDateTime(86400000)
-    : localInput(d.getTime() + 86400000);
+  const base = value === "NOW" || !value
+    ? new Date()
+    : new Date(value);
+
+  if (Number.isNaN(base.getTime())) {
+    return localDateTime(86400000);
+  }
+
+  return localInput(base.getTime() + 86400000);
 };
 export function MapEvent() {
   const [e, setE] = useState<any>(newEvent());

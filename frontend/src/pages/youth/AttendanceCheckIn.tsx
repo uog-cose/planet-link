@@ -40,7 +40,14 @@ export function AttendanceCheckIn() {
           });
           return;
         }
-        setMessage((e as Error).message || t("checkInInvalid"));
+        const errorMessage = (e as Error).message || "";
+        const isExpiredQr = /QR expired|invalid QR|expired or invalid/i.test(errorMessage);
+
+        setMessage(
+          isExpiredQr
+            ? "This attendance QR has expired or been replaced. Please ask your youth worker to generate a fresh QR code and scan it again."
+            : errorMessage || t("checkInInvalid")
+        );
         setStatus("error");
       });
     return () => {
