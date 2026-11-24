@@ -172,7 +172,8 @@ def process_daily_login_reward(profile):
     if not profile or profile.role != 'youth' or not profile.programme_id:
         return {'awarded': False, 'streak': 0, 'dailyXp': 0, 'bonusXp': 0}
     with transaction.atomic():
-        locked = Profile.objects.select_for_update().select_related('programme', 'user').get(pk=profile.pk)
+        # locked = Profile.objects.select_for_update().select_related('programme', 'user').get(pk=profile.pk)
+        locked = Profile.objects.select_for_update(of=('self',)).select_related('programme', 'user').get(pk=profile.pk)
         programme = locked.programme
         config = programme.login_reward_config if isinstance(programme.login_reward_config, dict) else {}
         if not config.get('enabled', True):
