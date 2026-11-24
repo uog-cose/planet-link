@@ -41,12 +41,12 @@ def attendance_session(request):
     if not event.start_at or not event.end_at or not (event.start_at <= now < event.end_at):
         return ok({"detail": "The event QR is only available while the event is taking place."}, 400)
 
-    AttendanceSession.objects.filter(programme=programme, active=True).update(active=False)
+    AttendanceSession.objects.filter(programme=programme, event=event, active=True).update(active=False)
     AttendanceSession.objects.filter(programme=programme, expires_at__lt=now).update(active=False)
     token = secrets.token_urlsafe(24)
     session = AttendanceSession.objects.create(
         programme=programme, event=event, created_by=request.user,
-        token=token, expires_at=now + timedelta(minutes=5),
+        token=token, expires_at=now + timedelta(minutes=10),
     )
     return ok({"token": token, "expiresAt": session.expires_at, "eventId": event.id, "eventTitle": event.title})
 
