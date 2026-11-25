@@ -123,5 +123,10 @@ def password_reset(request):
         reset.target.set_password(password); reset.target.save(update_fields=["password"])
         RefreshToken.objects.filter(user=reset.target,revoked_at__isnull=True).update(revoked_at=timezone.now())
         reset.used_at=timezone.now(); reset.save(update_fields=["used_at"])
-    return ok({"ok":True})
+        target = reset.target
+        raw_refresh, _ = issue_refresh_token(target)
+    dj_login(request, target)
+    response = ok({"ok":True, "user":{"username":target.username,"role":target.profile.role,"gamertag":target.profile.gamertag,"mustChangePassword":bool(target.profile.must_change_password)}})
+    set_refresh_cookie(response, raw_refresh)
+    return response
 

@@ -115,6 +115,7 @@ def admin_instances(request):
                 streak_rules=json.loads(json.dumps(source.streak_rules or [])),
                 login_reward_config=json.loads(json.dumps(source.login_reward_config or {})),
                 group_scoring_config=json.loads(json.dumps(source.group_scoring_config or {})),
+                attendance_config=json.loads(json.dumps(source.attendance_config or {'default_days':[0,1,2,3,4,5,6]})),
                 attendance_attention_days=source.attendance_attention_days,
                 points_attention_days=source.points_attention_days,
                 attention_grace_days=source.attention_grace_days,
@@ -162,17 +163,17 @@ def admin_instances(request):
 def admin_users(request):
     if not require_role(request,["admin"]): return ok({"detail":"Forbidden"},403)
     programme=active_programme_for(profile_for(request))
-    users=User.objects.filter(is_active=True,profile__isnull=False,profile__programme=programme).select_related("profile").order_by("profile__role","profile__gamertag")
-    return ok({"items":[{"userId":u.id,"gamertag":u.profile.gamertag,"role":u.profile.role,"programmeId":programme.id if programme else None} for u in users]})
+    users=User.objects.filter(is_active=True,profile__isnull=False).select_related("profile","profile__programme").order_by("profile__programme__name","profile__role","profile__gamertag")
+    return ok({"items":[{"userId":u.id,"gamertag":u.profile.gamertag,"role":u.profile.role,"programmeId":u.profile.programme_id,"programmeName":u.profile.programme.name if u.profile.programme_id else None} for u in users]})
 
 @require_http_methods(["GET","POST"])
 def admin_account_deletions(request):
     if not require_role(request,['admin']): return ok({'detail':'Forbidden'},403)
     if request.method=='GET':
-        items=list(Profile.objects.filter(deletion_requested=True,programme=active_programme_for(profile_for(request)),user__is_active=True).select_related('user').order_by('id').values('id','gamertag','role','user__username','user_id'))
+        items=list(Profile.objects.filter(deletion_requested=True,user__is_active=True).select_related('user').order_by('id').values('id','gamertag','role','user__username','user_id'))
         return ok({'items':items})
     body=parse_json(request) or {}
-    try: p=Profile.objects.select_related('user').get(id=int(body.get('profileId')),programme=active_programme_for(profile_for(request)),deletion_requested=True)
+    try: p=Profile.objects.select_related('user').get(id=int(body.get('profileId')),deletion_requested=True)
     except (ValueError,TypeError,Profile.DoesNotExist): return ok({'detail':'Deletion request not found'},404)
     action=str(body.get('action','')).lower()
     if action=='reject':
@@ -198,7 +199,7 @@ def admin_password_reset_qr(request):
     admin_p=require_role(request,["admin"])
     if not admin_p: return ok({"detail":"Forbidden"},403)
     body=parse_json(request) or {}
-    try: target=User.objects.select_related("profile").get(id=int(body.get("userId")),is_active=True,profile__programme=active_programme_for(admin_p))
+    try: target=User.objects.select_related("profile").get(id=int(body.get("userId")),is_active=True,profile__isnull=False)
     except (ValueError,TypeError,User.DoesNotExist): return ok({"detail":"User not found"},404)
     if not hasattr(target,"profile"): return ok({"detail":"User has no profile"},400)
     raw=secrets.token_urlsafe(32)
@@ -354,7 +355,7 @@ def admin_config(request):
             programme = requested
 
         updates = {}
-        for field in ['name','location','theme','target_xp','starts','ends','theme_config','milestones','max_worker_points','attendance_points','streak_rules','login_reward_config','group_scoring_config','attendance_attention_days','points_attention_days','attention_grace_days','notification_retention_days','public_config','public_enabled','status','active']:
+        for field in ['name','location','theme','target_xp','starts','ends','theme_config','milestones','max_worker_points','attendance_points','streak_rules','login_reward_config','group_scoring_config','attendance_config','attendance_attention_days','points_attention_days','attention_grace_days','notification_retention_days','public_config','public_enabled','status','active']:
             if field in body:
                 updates[field] = body[field]
         if 'status' in updates:
@@ -372,6 +373,19 @@ def admin_config(request):
         if 'public_enabled' in updates and not isinstance(updates['public_enabled'], bool):
             return ok({'detail':'Public dashboard setting must be true or false'},400)
 
+        attendance_config = updates.get('attendance_config', programme.attendance_config or {})
+        if not isinstance(attendance_config, dict):
+            return ok({'detail':'Attendance configuration must be an object'},400)
+        raw_days = attendance_config.get('default_days', [])
+        if not isinstance(raw_days, list) or any(not str(x).isdigit() or not 0 <= int(x) <= 6 for x in raw_days):
+            return ok({'detail':'Attendance days must be a list of weekday numbers from 0 (Monday) to 6 (Sunday)'},400)
+        attendance_config = {**attendance_config, 'default_days': sorted(set(int(x) for x in raw_days))}
+        previous_attendance_days = (programme.attendance_config or {}).get('default_days', [0, 1, 2, 3, 4, 5, 6])
+        if 'attendance_config' in updates and previous_attendance_days != attendance_config['default_days']:
+            record_attendance_schedule_change(
+                programme, 'programme', attendance_config['default_days'], actor=request.user,
+                previous_days=previous_attendance_days,
+            )
         target_xp = int(updates.get('target_xp', programme.target_xp) or 0)
         max_worker_points = int(updates.get('max_worker_points', programme.max_worker_points) or 0)
         attendance_points = int(updates.get('attendance_points', programme.attendance_points) or 0)
@@ -440,7 +454,7 @@ def admin_config(request):
             return ok({'detail':'Streak rules need positive day thresholds and multipliers between 1 and 10'},400)
         streak_events = [x['events'] for x in cleaned_rules]
         if len(set(streak_events)) != len(streak_events) or streak_events != sorted(streak_events):
-            return ok({'detail':'Consecutive event thresholds must be strictly ascending and unique'},400)
+            return ok({'detail':'Attendance-day thresholds must be strictly ascending and unique'},400)
 
         login_config = updates.get('login_reward_config', programme.login_reward_config)
         try:
@@ -497,11 +511,12 @@ def admin_config(request):
         programme.streak_rules = cleaned_rules
         programme.login_reward_config = login_config
         programme.group_scoring_config = group_scoring_config
+        programme.attendance_config = attendance_config
         for field, value in windows.items(): setattr(programme, field, value)
         programme.save()
         AuditLog.objects.create(actor=request.user, action='programme_update', target=str(programme.id), detail={k:v for k,v in body.items() if str(k).lower() not in {'password','token','csrf','imagedata','public_map_token'}})
 
     rewards = list(Reward.objects.filter(programme=programme, active=True).order_by('name').values('id','name','description'))
-    row = {'id':programme.id,'name':programme.name,'location':programme.location,'theme':programme.theme,'theme_config':programme.theme_config,'target_xp':programme.target_xp,'milestones':programme.milestones,'rewards':rewards,'max_worker_points':programme.max_worker_points,'attendance_points':programme.attendance_points,'streak_rules':programme.streak_rules,'login_reward_config':programme.login_reward_config,'group_scoring_config':programme.group_scoring_config,'attendance_attention_days':programme.attendance_attention_days,'points_attention_days':programme.points_attention_days,'attention_grace_days':programme.attention_grace_days,'notification_retention_days':programme.notification_retention_days,'public_config':programme.public_config,'public_map_token':programme.public_map_token,'public_map_token_expires_at':programme.public_map_token_expires_at,'active':programme.active,'status':programme.status,'public_enabled':programme.public_enabled,'starts':programme.starts,'ends':programme.ends}
+    row = {'id':programme.id,'name':programme.name,'location':programme.location,'theme':programme.theme,'theme_config':programme.theme_config,'target_xp':programme.target_xp,'milestones':programme.milestones,'rewards':rewards,'max_worker_points':programme.max_worker_points,'attendance_points':programme.attendance_points,'streak_rules':programme.streak_rules,'login_reward_config':programme.login_reward_config,'group_scoring_config':programme.group_scoring_config,'attendance_config':programme.attendance_config,'attendance_attention_days':programme.attendance_attention_days,'points_attention_days':programme.points_attention_days,'attention_grace_days':programme.attention_grace_days,'notification_retention_days':programme.notification_retention_days,'public_config':programme.public_config,'public_map_token':programme.public_map_token,'public_map_token_expires_at':programme.public_map_token_expires_at,'active':programme.active,'status':programme.status,'public_enabled':programme.public_enabled,'starts':programme.starts,'ends':programme.ends}
     return ok({'programmes':[row],'audit':list(AuditLog.objects.filter(programme=programme).order_by('-created_at')[:10].values('action','target','created_at'))})
 

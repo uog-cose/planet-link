@@ -4509,3 +4509,9 @@ select {
         margin-left: 54px
     }
 }
+
+
+/* Native checkboxes follow the active application theme. */
+input[type="checkbox"] {
+  accent-color: var(--accent);
+}

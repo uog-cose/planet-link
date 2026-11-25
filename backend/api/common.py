@@ -20,10 +20,10 @@ from django.utils import timezone
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from core.config import CONFIG
-from core.services import award_xp, attendance_streak_multiplier, event_attendance_streak, create_notification, programme_local_date
+from core.services import award_xp, attendance_streak_multiplier, scheduled_attendance_streak, create_notification, programme_local_date, record_attendance_schedule_change
 
 from core.models import (
-    Attendance, AttendanceSession, AuditLog, Challenge, DrawingSubmission,
+    Attendance, AttendanceSession, AttendanceScheduleChange, AuditLog, Challenge, DrawingSubmission,
     Badge, Group, MapEvent, Notification, Profile, ProfileBadge, ProfileSkill, Programme, ProgrammeMembership,
     RefreshToken, Reward, RewardAssignment, ScratchClaim, Skill, SkillMilestone, XPTransaction, EventCheckIn, PasswordResetQr, PointsQrToken, GameAssignment, GameAttempt, PointAwardRequest, PublicPointRequest, PushSubscription, SkillAssignment, RewardFulfillment, NotificationSound, DailyLogin, LoginStreakAward, GroupMembership, GroupXPContribution, GroupScoringPolicyHistory,
 )
@@ -51,7 +51,7 @@ def set_refresh_cookie(response, raw, persistent=True):
 def current_attendance_streak(profile):
     if not profile or not profile.programme_id:
         return 0
-    return event_attendance_streak(profile, profile.programme)
+    return scheduled_attendance_streak(profile, profile.programme)
 
 
 def needs_attention_for(profile, programme):

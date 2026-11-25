@@ -56,10 +56,6 @@ export function NotificationBell({
     }, 220);
   };
   useEffect(() => {
-    if (open && panelLoaded && !loading && !items.length && !clearing)
-      closePanel();
-  }, [open, panelLoaded, loading, items.length, clearing]);
-  useEffect(() => {
     let alive = true;
     let inFlight = false;
     const loadCount = () => {

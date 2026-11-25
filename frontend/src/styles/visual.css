@@ -6557,3 +6557,42 @@ textarea:focus-visible {
   margin: 0 0 0.75rem;
   font-size: 0.82rem;
 }
+
+
+/* Youth dashboard hero: restrained, theme-token-driven panel rather than decorative AI-style artwork. */
+.youth-dashboard-v3 .yq-kid-hero {
+  background: var(--button);
+  color: var(--buttonText, #fff);
+  border: 1px solid var(--button);
+  border-radius: 20px;
+  box-shadow: var(--q-shadow);
+}
+.youth-dashboard-v3 .yq-kid-hero::before,
+.youth-dashboard-v3 .yq-kid-hero::after { display: none; }
+.youth-dashboard-v3 .yq-kid-kicker {
+  color: var(--buttonText, #fff);
+  background: rgba(255, 255, 255, .14);
+  border: 1px solid rgba(255, 255, 255, .28);
+}
+.youth-dashboard-v3 .yq-kid-hero h1 { color: var(--buttonText, #fff); }
+.youth-dashboard-v3 .yq-kid-hero p {
+  color: color-mix(in srgb, var(--buttonText, #fff) 88%, transparent);
+}
+.youth-dashboard-v3 .yq-kid-hero .yq-kid-button-main {
+  background: var(--accent);
+  color: var(--on-accent, #fff);
+}
+.password-input-wrap { position: relative; display: flex; align-items: center; }
+.password-input-wrap > input { width: 100%; padding-right: 46px; }
+.password-visibility {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; border: 0; border-radius: 8px;
+  color: var(--muted); background: transparent; cursor: pointer;
+}
+.password-visibility:hover { color: var(--text); background: var(--surface-2, var(--surface)); }
+.weekday-checkboxes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.weekday-option { display: inline-flex; align-items: center; gap: 7px; padding: 8px 11px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+.attendance-days-config { margin: 14px 0 18px; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+
+.attendance-restore-panel { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); display: grid; gap: 10px; }
