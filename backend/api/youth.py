@@ -1,4 +1,5 @@
 from .common import *
+from core.models import GroupTierUnlock
 from core.game_engine import GAME_TYPES, make_challenge, score_attempt, xp_for_performance, game_specific_xp
 from core.services import programme_local_date, attendance_streak_multiplier, scheduled_attendance_streak, effective_attendance_days
 from django.http import FileResponse
@@ -15,7 +16,7 @@ def dashboard(request):
     scoring_config = programme.group_scoring_config if isinstance(programme.group_scoring_config, dict) else {}
     minimum_group_size = max(1, int(scoring_config.get('minimum_group_size', 2) or 2))
     group_rows = []
-    for group in Group.objects.filter(programme=programme).prefetch_related('members'):
+    for group in Group.objects.filter(programme=programme).prefetch_related('members', 'tier_unlocks'):
         eligible = group.members.filter(role='youth', programme=programme)
         if not group.include_inactive_members:
             eligible = eligible.filter(user__is_active=True)
@@ -33,6 +34,32 @@ def dashboard(request):
         scoring_xp = max(0, scoring_xp + int(group.historical_xp or 0))
         collective_xp = int(group.xp or 0)
         average_xp = round(scoring_xp / eligible_count, 2) if eligible_count else 0
+
+        # Group milestones use collective group XP, not average XP per member.
+        configured_tiers = group.tier_targets if isinstance(group.tier_targets, list) else []
+        unlocks_by_threshold = {
+            int(unlock.threshold): unlock
+            for unlock in group.tier_unlocks.all()
+        }
+        group_milestones = []
+        valid_tiers = [
+            tier for tier in configured_tiers
+            if isinstance(tier, dict)
+            and str(tier.get('name', '')).strip()
+            and str(tier.get('xp', '')).isdigit()
+            and int(tier.get('xp', 0)) > 0
+        ]
+        for tier in sorted(valid_tiers, key=lambda item: int(item['xp'])):
+            threshold = int(tier['xp'])
+            unlock = unlocks_by_threshold.get(threshold)
+            group_milestones.append({
+                'name': str(tier.get('name', '')).strip(),
+                'xp': threshold,
+                'prize': str(tier.get('prize') or (unlock.prize if unlock else '')).strip(),
+                'unlocked': collective_xp >= threshold,
+                'unlockedAt': unlock.unlocked_at.isoformat() if unlock and collective_xp >= threshold else None,
+            })
+
         group_rows.append({
             'id': group.id, 'name': group.name, 'xp': collective_xp,
             'eligibleMembers': eligible_count, 'averageXpPerMember': average_xp,
@@ -40,6 +67,7 @@ def dashboard(request):
             'includeInactiveMembers': group.include_inactive_members,
             'targetXp': programme.target_xp,
             'progress': round(min(100, max(0, average_xp / max(1, programme.target_xp) * 100)), 1),
+            'milestones': group_milestones,
         })
     ranked_groups = sorted([g for g in group_rows if g['ranked']], key=lambda g: (-g['averageXpPerMember'], g['name'].lower(), g['id']))
     group_ranks = {g['id']: index for index, g in enumerate(ranked_groups, 1)}

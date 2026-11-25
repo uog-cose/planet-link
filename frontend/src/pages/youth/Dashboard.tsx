@@ -242,6 +242,14 @@ export function YouthDashboard() {
     0,
     Math.min(100, Number(team?.progress ?? (teamAverageXp / teamTarget) * 100)),
   );
+  const teamMilestones = Array.isArray(team?.milestones)
+    ? [...team.milestones].sort(
+        (a: any, b: any) => Number(a.xp || 0) - Number(b.xp || 0),
+      )
+    : [];
+  const teamMilestonesDone = teamMilestones.filter(
+    (milestone: any) => milestone.unlocked,
+  ).length;
   const sortedMilestones = [...milestones].sort(
     (a: any, b: any) => Number(a.xp || 0) - Number(b.xp || 0),
   );
@@ -473,6 +481,52 @@ export function YouthDashboard() {
                   ? `Average ${Math.round(Number(team.averageXpPerMember || 0)).toLocaleString()} XP per eligible member · ${team.eligibleMembers} counted.`
                   : "Your group's competitive ranking appears when it meets the minimum team size."}
               </span>
+            </div>
+
+            <div className="yq-kid-inline-quest" aria-label="Your group XP milestones">
+              <div className="yq-kid-inline-quest-head">
+                <span>
+                  <Target size={14} /> GROUP QUEST MAP
+                </span>
+                <b>
+                  {teamMilestones.length
+                    ? `${teamMilestonesDone}/${teamMilestones.length} unlocked`
+                    : "Not configured"}
+                </b>
+              </div>
+              <div className="yq-kid-inline-track">
+                {teamMilestones.length ? (
+                  teamMilestones.map((milestone: any, index: number) => (
+                    <div
+                      className={`yq-kid-inline-stop ${milestone.unlocked ? "is-done" : ""}`}
+                      key={`${milestone.name}-${milestone.xp}-${index}`}
+                    >
+                      <span className="yq-kid-inline-dot">
+                        {milestone.unlocked
+                          ? <CheckCircle2 size={15} />
+                          : <LockKeyhole size={15} />}
+                      </span>
+                      <span className="yq-kid-inline-label">
+                        <b>{milestone.name}</b>
+                        <small>
+                          {Number(milestone.xp).toLocaleString()} group XP
+                          {milestone.prize ? ` · ${milestone.prize}` : ""}
+                        </small>
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="muted">
+                    Your youth worker or administrator has not configured any group milestones yet.
+                  </p>
+                )}
+              </div>
+              {teamMilestones.length > 0 && teamMilestonesDone === teamMilestones.length && (
+                <div className="yq-kid-next-prize">
+                  <CheckCircle2 size={14} />
+                  <span><b>All group milestones reached!</b> Amazing teamwork!</span>
+                </div>
+              )}
             </div>
           </article>
         </section>
