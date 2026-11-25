@@ -68,8 +68,16 @@ def public_dashboard(request):
             achievements_count=ProfileBadge.objects.filter(profile_id__in=member_ids).count() if member_ids else 0
             challenges_count=GameAttempt.objects.filter(profile_id__in=member_ids,status='completed',game__programme=programme).count() if member_ids else 0
             collective_xp=int(group.xp or 0)
-            average_xp=round(collective_xp/eligible_count,2) if eligible_count else 0
-            group_rows.append({'id':group.id,'name':group.name,'xp':collective_xp,'averageXpPerMember':average_xp,'eligibleMembers':eligible_count,'ranked':eligible_count>=minimum_group_size,'targetXp':int(programme.target_xp if programme else 1),'progress':round(min(100,max(0,(float(collective_xp)/max(1,float(programme.target_xp if programme else 1)))*100)),1),'members':len(member_ids),'skills':skills_count,'achievements':achievements_count,'challenges':challenges_count})
+            eligible_people=list(eligible_members.only('id'))
+            scoring_xp=0
+            for person in eligible_people:
+                membership=GroupMembership.objects.filter(group=group,profile=person,status__in=['active','inactive'],left_at__isnull=True).order_by('-joined_at').first()
+                contributions=GroupXPContribution.objects.filter(group=group,transaction__target=person)
+                if membership: contributions=contributions.filter(created_at__gte=membership.joined_at)
+                scoring_xp += int(contributions.aggregate(total=Sum('amount'))['total'] or 0)
+            scoring_xp = max(0, scoring_xp + int(group.historical_xp or 0))
+            average_xp=round(scoring_xp/eligible_count,2) if eligible_count else 0
+            group_rows.append({'id':group.id,'name':group.name,'xp':collective_xp,'scoringXp':scoring_xp,'averageXpPerMember':average_xp,'eligibleMembers':eligible_count,'ranked':eligible_count>=minimum_group_size,'targetXp':int(programme.target_xp if programme else 1),'progress':round(min(100,max(0,(float(average_xp)/max(1,float(programme.target_xp if programme else 1)))*100)),1),'members':len(member_ids),'skills':skills_count,'achievements':achievements_count,'challenges':challenges_count})
         ranked_groups=sorted([x for x in group_rows if x['ranked']],key=lambda x:(-x['averageXpPerMember'],x['name'].lower()))
         ranks={row['id']:i for i,row in enumerate(ranked_groups,1)}
         for row in group_rows:
@@ -105,8 +113,17 @@ def public_dashboard(request):
                     eligible = group.members.filter(role='youth', programme=programme)
                     if not group.include_inactive_members:
                         eligible = eligible.filter(user__is_active=True)
-                    eligible_count = eligible.count()
+                    eligible_people = list(eligible.only('id'))
+                    eligible_count = len(eligible_people)
                     average_members = float(eligible_count)
+                    scoring_xp = int(group.historical_xp or 0)
+                    for person in eligible_people:
+                        membership = GroupMembership.objects.filter(group=group, profile=person, status__in=['active','inactive'], left_at__isnull=True).order_by('-joined_at').first()
+                        contributions = GroupXPContribution.objects.filter(group=group, transaction__target=person)
+                        if membership:
+                            contributions = contributions.filter(created_at__gte=membership.joined_at)
+                        scoring_xp += int(contributions.aggregate(total=Sum('amount'))['total'] or 0)
+                    scoring_xp = max(0, scoring_xp)
                 else:
                     policy = group.scoring_policy_history.filter(effective_from__lte=start_at).order_by('-effective_from').first()
                     include_inactive = bool(policy.include_inactive_members) if policy else False
@@ -133,7 +150,7 @@ def public_dashboard(request):
                         group=group, created_at__gte=start_at, created_at__lte=local_now,
                     ).aggregate(total=Sum('amount'))['total'] or 0)
                     period_xp = max(0, period_xp)
-                average_xp = round(period_xp / average_members, 2) if average_members > 0 else 0
+                average_xp = round((scoring_xp if period == 'overall' else period_xp) / average_members, 2) if average_members > 0 else 0
                 rows.append({
                     'id': group.id, 'name': group.name, 'xp': period_xp,
                     'averageXpPerMember': average_xp, 'averageMembers': round(average_members, 2),

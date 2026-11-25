@@ -16,7 +16,8 @@ def root(request):
 
 urlpatterns = [
     path('', root, name='root'),
-    path('admin/', admin.site.urls),
+    # Keep Django's built-in admin separate from the React /admin application.
+    path('django-admin/', admin.site.urls),
     path('api/', include('api.urls')),
 ]
 

@@ -5,50 +5,22 @@ from core.services import event_attendance_streak, recalculate_event_attendance_
 
 @require_http_methods(["POST"])
 def attendance_session(request):
+    """Create a short-lived programme attendance QR; no map event is required."""
     actor = require_role(request, ["worker", "admin"])
     if not actor:
         return ok({"detail": "Forbidden"}, 403)
     programme = active_programme_for(actor)
     if not programme:
         return ok({"detail": "No active programme"}, 400)
-    body = parse_json(request) or {}
     now = timezone.now()
-
-    event_id = body.get("eventId")
-
-    if event_id:
-        try:
-            event = MapEvent.objects.get(
-                pk=int(event_id),
-                programme=programme
-            )
-        except (TypeError, ValueError, MapEvent.DoesNotExist):
-            return ok({"detail": "Selected programme event was not found."}, 400)
-    else:
-        # Automatically select the currently running programme event.
-        event = MapEvent.objects.filter(
-            programme=programme,
-            start_at__lte=now,
-            end_at__gt=now,
-        ).order_by("start_at", "id").first()
-
-        if not event:
-            return ok({
-                "detail": "There is no programme event currently taking place. Please check the event schedule."
-            }, 400)
-    if event.status == "cancelled":
-        return ok({"detail": "Cancelled events cannot accept attendance."}, 400)
-    if not event.start_at or not event.end_at or not (event.start_at <= now < event.end_at):
-        return ok({"detail": "The event QR is only available while the event is taking place."}, 400)
-
-    AttendanceSession.objects.filter(programme=programme, event=event, active=True).update(active=False)
+    AttendanceSession.objects.filter(programme=programme, active=True).update(active=False)
     AttendanceSession.objects.filter(programme=programme, expires_at__lt=now).update(active=False)
-    token = secrets.token_urlsafe(24)
+    token = secrets.token_urlsafe(32)
     session = AttendanceSession.objects.create(
-        programme=programme, event=event, created_by=request.user,
-        token=token, expires_at=now + timedelta(minutes=10),
+        programme=programme, event=None, created_by=request.user, token=token,
+        expires_at=now + timedelta(minutes=10),
     )
-    return ok({"token": token, "expiresAt": session.expires_at, "eventId": event.id, "eventTitle": event.title})
+    return ok({"token": token, "expiresAt": session.expires_at})
 
 
 @require_http_methods(["POST"])
@@ -59,90 +31,134 @@ def attendance_scan(request):
     if not profile:
         return ok({"detail": "Only young people can scan attendance QR codes"}, 403)
     body = parse_json(request) or {}
-    token = body.get("token")
     programme = active_programme_for(profile)
     if not programme:
         return ok({"detail": "No active programme"}, 400)
     now = timezone.now()
     today = programme_local_date(programme, now)
     session = AttendanceSession.objects.filter(
-        token=token, active=True, expires_at__gte=now, programme=programme,
-        event__isnull=False,
-    ).select_related("created_by", "event").first()
+        token=body.get("token"), active=True, expires_at__gte=now, programme=programme,
+    ).select_related("created_by").first()
     if not session:
-        return ok({"detail": "QR expired or invalid. Ask your youth worker for the current event QR."}, 400)
-    event = session.event
-    if event.status == "cancelled" or not event.start_at or not event.end_at or not (event.start_at <= now < event.end_at):
-        return ok({"detail": "This event is not currently accepting QR check-ins."}, 400)
+        return ok({"detail": "QR expired or invalid. Ask your youth worker for a current attendance QR."}, 400)
+
+    from core.services import effective_attendance_days, scheduled_attendance_streak
+    allowed_days = effective_attendance_days(profile, programme)
+    if today.weekday() not in allowed_days:
+        return ok({"detail": "Today is not one of your scheduled attendance days. Ask your youth worker if your schedule needs updating."}, 403)
 
     with transaction.atomic():
-        # Serialise check-ins for this young person so two event scans on the
-        # same day cannot both claim the daily XP reward.
         profile = Profile.objects.select_for_update().select_related("programme", "user").get(pk=profile.pk)
-        existing_event_checkin = EventCheckIn.objects.filter(event=event, participant=profile).first()
-        if existing_event_checkin:
-            streak = event_attendance_streak(profile, programme, now)
-            daily_reward_recorded = Attendance.objects.filter(
-                participant=profile, attendance_date=today
-            ).exists()
-            return ok({
-                "ok": True, "awarded": 0, "streak": streak,
-                "multiplier": float(existing_event_checkin.multiplier),
-                "alreadyRewardedToday": daily_reward_recorded,
-                "alreadyRecorded": True,
-                "detail": "Your attendance for this event is already recorded.",
-            })
-
-        daily_record = Attendance.objects.filter(
-            participant=profile, attendance_date=today
-        ).first()
-        checkin = EventCheckIn.objects.create(
-            event=event, participant=profile, source="qr", verified_by=session.created_by,
-            checked_in_at=now,
-        )
-        streak = event_attendance_streak(profile, programme, now)
+        existing = Attendance.objects.filter(participant=profile, attendance_date=today).first()
+        if existing:
+            return ok({"ok": True, "awarded": 0, "streak": scheduled_attendance_streak(profile, programme, now), "alreadyRecorded": True, "alreadyRewardedToday": True, "detail": "Your attendance for today is already recorded."})
+        Attendance.objects.create(session=session, participant=profile, attendance_date=today)
+        streak = scheduled_attendance_streak(profile, programme, now)
         multiplier = attendance_streak_multiplier(programme, streak)
         base = max(0, int(programme.attendance_points or 0))
-        # Event attendance and streak progress are recorded for every event.
-        # XP is limited to one reward-bearing QR scan per programme-local day.
-        awarded = 0 if daily_record else (int(round(base * multiplier)) if base else 0)
-        checkin.streak_count = streak
-        checkin.multiplier = multiplier
-        checkin.awarded_xp = awarded
-        checkin.save(update_fields=["streak_count", "multiplier", "awarded_xp"])
-        if not daily_record:
-            Attendance.objects.create(session=session, participant=profile, attendance_date=today)
+        awarded = int(round(base * multiplier)) if base else 0
         profile.streak = streak
         profile.save(update_fields=["streak"])
         if awarded:
-            award_xp(
-                target=profile, actor=session.created_by, amount=awarded,
-                source="attendance", reason=f"Event attendance — {streak} consecutive events ({multiplier:g}x)", notify=False,
-            )
-            AuditLog.objects.create(
-                actor=session.created_by, programme=programme,
-                action="event_qr_attendance_awarded", target=str(profile.id),
-                detail={"eventId": event.id, "checkInId": checkin.id, "amount": awarded, "streak": streak, "multiplier": multiplier},
-            )
-        else:
-            AuditLog.objects.create(
-                actor=session.created_by, programme=programme,
-                action="event_qr_attendance_recorded_no_daily_reward", target=str(profile.id),
-                detail={"eventId": event.id, "checkInId": checkin.id, "streak": streak},
-            )
+            award_xp(target=profile, actor=session.created_by, amount=awarded, source="attendance", reason=f"Scheduled attendance — {streak} assigned attendance days ({multiplier:g}x)", notify=False)
+        AuditLog.objects.create(actor=session.created_by, programme=programme, action="scheduled_qr_attendance_recorded", target=str(profile.id), detail={"attendanceDate": today.isoformat(), "days": allowed_days, "streak": streak, "multiplier": multiplier, "amount": awarded})
 
-    create_notification(
-        profile=profile,
-        title=(f"Event attendance recorded · +{awarded} XP" if awarded else "Event attendance recorded"),
-        body=f"{event.title} · {streak} consecutive event streak ({multiplier:g}x)." + (" Your daily attendance reward was already claimed." if not awarded else ""),
-        kind="attendance", url="/",
-    )
-    return ok({
-        "ok": True, "awarded": awarded, "streak": streak, "multiplier": multiplier,
-        "alreadyRewardedToday": awarded == 0, "alreadyRecorded": True,
-        "eventId": event.id, "eventTitle": event.title,
-        "detail": ("Attendance recorded. Your daily reward was already claimed." if awarded == 0 else "Attendance recorded."),
-    })
+    create_notification(profile=profile, title=(f"Attendance +{awarded} XP" if awarded else "Attendance recorded"), body=f"Your scheduled attendance has been recorded. Current streak: {streak}.", kind="attendance", url="/")
+    return ok({"ok": True, "awarded": awarded, "streak": streak, "multiplier": multiplier, "alreadyRecorded": True, "alreadyRewardedToday": False, "detail": "Attendance recorded."})
+
+
+@require_http_methods(["GET", "POST"])
+def attendance_schedule(request):
+    """Admin-managed attendance day hierarchy and explicit overrides."""
+    actor = require_role(request, ["admin"])
+    if not actor:
+        return ok({"detail": "Forbidden"}, 403)
+    programme = active_programme_for(actor)
+    if not programme:
+        return ok({"detail": "No active programme"}, 400)
+    if request.method == "GET":
+        from core.models import Group
+        groups = Group.objects.filter(programme=programme).order_by("name")
+        people = Profile.objects.filter(programme=programme, role="youth", user__is_active=True).order_by("gamertag")
+        return ok({
+            "programme": {"defaultDays": (programme.attendance_config or {}).get("default_days", [])},
+            "groups": [{"id": g.id, "name": g.name, "attendanceDays": g.attendance_days} for g in groups],
+            "people": [{"id": p.id, "gamertag": p.gamertag, "attendanceDays": p.attendance_days} for p in people],
+            "weekdayOptions": [{"value": i, "label": label} for i, label in enumerate(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"])],
+        })
+    body = parse_json(request) or {}
+    if body.get("action") == "restore":
+        try:
+            participant = Profile.objects.get(pk=int(body.get("profileId")), programme=programme, role="youth")
+            restore_date = timezone.datetime.fromisoformat(str(body.get("date"))).date()
+        except (TypeError, ValueError, Profile.DoesNotExist):
+            return ok({"detail": "Select a valid young person and attendance date."}, 400)
+        reason = str(body.get("reason", "")).strip()[:240]
+        if len(reason) < 8:
+            return ok({"detail": "Provide an audit reason of at least 8 characters."}, 400)
+        today = programme_local_date(programme, timezone.now())
+        if restore_date > today:
+            return ok({"detail": "Attendance cannot be restored for a future date."}, 400)
+        from core.services import effective_attendance_days, scheduled_attendance_streak
+        if restore_date.weekday() not in effective_attendance_days(participant, programme, on_date=restore_date):
+            return ok({"detail": "That date was not an assigned attendance day."}, 400)
+        with transaction.atomic():
+            if Attendance.objects.filter(participant=participant, attendance_date=restore_date).exists():
+                return ok({"detail": "Attendance is already recorded for that date."}, 409)
+            correction_session = AttendanceSession.objects.create(programme=programme, event=None, created_by=request.user, token=secrets.token_urlsafe(32), expires_at=timezone.now(), active=False)
+            Attendance.objects.create(session=correction_session, participant=participant, attendance_date=restore_date)
+            streak = scheduled_attendance_streak(participant, programme)
+            participant.streak = streak
+            participant.save(update_fields=["streak"])
+            AuditLog.objects.create(actor=request.user, programme=programme, action="scheduled_attendance_restored", target=str(participant.id), detail={"date": restore_date.isoformat(), "reason": reason, "streak": streak, "xpAwarded": 0})
+        return ok({"ok": True, "streak": streak, "xpAwarded": 0})
+    raw_days = body.get("days")
+    if not isinstance(raw_days, list) or len(raw_days) > 7:
+        return ok({"detail": "Choose one or more valid weekdays, or an empty list to disable attendance."}, 400)
+    try:
+        days = sorted(set(int(day) for day in raw_days))
+    except (TypeError, ValueError):
+        return ok({"detail": "Attendance days must be weekday numbers from 0 to 6."}, 400)
+    if any(day < 0 or day > 6 for day in days):
+        return ok({"detail": "Attendance days must be weekday numbers from 0 to 6."}, 400)
+    target_type = str(body.get("targetType", "programme"))
+    override = body.get("override", True)
+    if not isinstance(override, bool):
+        return ok({"detail": "Override must be true or false."}, 400)
+    if target_type == "programme":
+        previous_days = (programme.attendance_config or {}).get("default_days", [0, 1, 2, 3, 4, 5, 6])
+        if previous_days != days:
+            record_attendance_schedule_change(programme, "programme", days, actor=request.user, previous_days=previous_days)
+            programme.attendance_config = {**(programme.attendance_config or {}), "default_days": days}
+            programme.save(update_fields=["attendance_config", "updated_at"])
+        target_id = programme.id
+    elif target_type == "group":
+        from core.models import Group
+        try:
+            target = Group.objects.get(pk=int(body.get("targetId")), programme=programme)
+        except (TypeError, ValueError, Group.DoesNotExist):
+            return ok({"detail": "Group not found in this programme."}, 404)
+        next_days = days if override else None
+        if target.attendance_days != next_days:
+            record_attendance_schedule_change(programme, "group", next_days, actor=request.user, group=target, previous_days=target.attendance_days)
+            target.attendance_days = next_days
+            target.save(update_fields=["attendance_days"])
+        target_id = target.id
+    elif target_type == "person":
+        try:
+            target = Profile.objects.get(pk=int(body.get("targetId")), programme=programme, role="youth")
+        except (TypeError, ValueError, Profile.DoesNotExist):
+            return ok({"detail": "Young person not found in this programme."}, 404)
+        next_days = days if override else None
+        if target.attendance_days != next_days:
+            record_attendance_schedule_change(programme, "person", next_days, actor=request.user, profile=target, previous_days=target.attendance_days)
+            target.attendance_days = next_days
+            target.save(update_fields=["attendance_days"])
+        target_id = target.id
+    else:
+        return ok({"detail": "Target type must be programme, group or person."}, 400)
+    AuditLog.objects.create(actor=request.user, programme=programme, action="attendance_schedule_updated", target=str(target_id), detail={"targetType": target_type, "days": days, "override": override})
+    return ok({"ok": True, "targetType": target_type, "targetId": target_id, "days": days})
 
 
 @require_http_methods(["GET", "POST"])

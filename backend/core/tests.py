@@ -269,6 +269,35 @@ class FeaturePermissionTests(TestCase):
         GameAssignment.objects.create(game=game,assigned_by=self.worker_u,target_profile=self.youth)
         self.assertEqual(self.client.post('/api/drawings/submit/',data=json.dumps(payload),content_type='application/json').status_code,201)
 
+class GroupFairnessRegressionTests(TestCase):
+    def test_group_size_does_not_change_average_and_departed_xp_is_not_reassigned(self):
+        from core.services import award_xp
+        programme = Programme.objects.create(name='Fairness', location='Test', group_scoring_config={'minimum_group_size': 1, 'ranking_periods': ['overall']})
+        actor = User.objects.create_user('fairness-admin', password='YouthQuest123!')
+        five_person_group = Group.objects.create(name='Five people', programme=programme)
+        four_person_group = Group.objects.create(name='Four people', programme=programme)
+        five_people = []
+        for index in range(5):
+            user = User.objects.create_user(f'five-{index}', password='YouthQuest123!')
+            profile = Profile.objects.create(user=user, role='youth', gamertag=f'Five {index}', programme=programme)
+            five_person_group.members.add(profile)
+            five_people.append(profile)
+        for index in range(4):
+            user = User.objects.create_user(f'four-{index}', password='YouthQuest123!')
+            profile = Profile.objects.create(user=user, role='youth', gamertag=f'Four {index}', programme=programme)
+            four_person_group.members.add(profile)
+            award_xp(target=profile, actor=actor, amount=100, source='test', reason='Fair share')
+        for profile in five_people:
+            award_xp(target=profile, actor=actor, amount=100, source='test', reason='Fair share')
+        five_person_group.members.remove(five_people[-1])
+        response = Client().get('/api/public/')
+        self.assertEqual(response.status_code, 200)
+        rows = {row['name']: row for row in response.json()['groups']}
+        self.assertEqual(rows['Five people']['averageXpPerMember'], 100)
+        self.assertEqual(rows['Four people']['averageXpPerMember'], 100)
+        self.assertEqual(rows['Five people']['xp'], 500)
+
+
 class AttendanceAutomationTests(TestCase):
     def setUp(self):
         self.client=Client(enforce_csrf_checks=False)
@@ -287,6 +316,40 @@ class AttendanceAutomationTests(TestCase):
         self.client.logout(); token2=self.session(); self.client.logout(); self.login('player')
         second=self.client.post('/api/attendance/scan/',data=json.dumps({'token':token2}),content_type='application/json').json()
         self.assertEqual(second['awarded'],0); self.assertTrue(second['alreadyRewardedToday'])
+
+    def test_attendance_qr_session_does_not_require_a_map_event(self):
+        self.login('coach')
+        response=self.client.post('/api/attendance/session/',data='{}',content_type='application/json')
+        self.assertEqual(response.status_code,200)
+        session=AttendanceSession.objects.get(token=response.json()['token'])
+        self.assertIsNone(session.event_id)
+
+    def test_attendance_schedule_inheritance_and_individual_override(self):
+        from core.services import effective_attendance_days
+        self.programme.attendance_config={'default_days':[0,2,4]}
+        self.programme.save(update_fields=['attendance_config'])
+        group=Group.objects.create(name='Schedule group',programme=self.programme,attendance_days=[1,3])
+        group.members.add(self.player)
+        self.assertEqual(effective_attendance_days(self.player,self.programme),[1,3])
+        self.player.attendance_days=[5]
+        self.player.save(update_fields=['attendance_days'])
+        self.assertEqual(effective_attendance_days(self.player,self.programme),[5])
+        self.player.attendance_days=None
+        self.player.save(update_fields=['attendance_days'])
+        group.attendance_days=None
+        group.save(update_fields=['attendance_days'])
+        self.assertEqual(effective_attendance_days(self.player,self.programme),[0,2,4])
+
+    def test_attendance_schedule_changes_do_not_rewrite_past_streak_rules(self):
+        from datetime import date
+        from core.models import AttendanceScheduleChange
+        from core.services import effective_attendance_days
+        self.programme.attendance_config={'default_days':[0,2,4]}
+        self.programme.save(update_fields=['attendance_config'])
+        AttendanceScheduleChange.objects.create(programme=self.programme,scope_type='programme',days=[0,2,4],effective_from=date(1970,1,1))
+        AttendanceScheduleChange.objects.create(programme=self.programme,scope_type='programme',days=[1],effective_from=date(2026,11,20))
+        self.assertEqual(effective_attendance_days(self.player,self.programme,on_date=date(2026,11,18)),[0,2,4])
+        self.assertEqual(effective_attendance_days(self.player,self.programme,on_date=date(2026,11,24)),[1])
 
 class InstanceVisibilityRegressionTests(TestCase):
     def setUp(self):

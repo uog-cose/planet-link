@@ -15,6 +15,10 @@ def default_login_reward_config():
 def default_group_scoring_config():
     return {'minimum_group_size': 2, 'ranking_periods': ['weekly', 'monthly', 'overall']}
 
+def default_attendance_config():
+    # Backwards-compatible until an administrator chooses a narrower schedule.
+    return {'default_days': [0, 1, 2, 3, 4, 5, 6]}
+
 class Profile(models.Model):
     ROLE_CHOICES=[('youth','Young Person'),('worker','Youth Worker'),('admin','Admin')]
     user=models.OneToOneField(User,on_delete=models.CASCADE,related_name='profile')
@@ -34,6 +38,8 @@ class Profile(models.Model):
     deletion_requested=models.BooleanField(default=False)
     must_change_password=models.BooleanField(default=False)
     theme_presets=models.JSONField(default=list, blank=True)
+    # null inherits the current group's schedule, then programme defaults.
+    attendance_days=models.JSONField(null=True, blank=True, default=None)
     updated_at=models.DateTimeField(auto_now=True)
 
 class Programme(models.Model):
@@ -53,6 +59,9 @@ class Programme(models.Model):
     streak_rules=models.JSONField(default=default_streak_rules, blank=True)
     login_reward_config=models.JSONField(default=default_login_reward_config, blank=True)
     group_scoring_config=models.JSONField(default=default_group_scoring_config, blank=True)
+    # Attendance days use Python weekday numbers: Monday=0 ... Sunday=6.
+    # Existing programmes retain an all-days default until an admin narrows it.
+    attendance_config=models.JSONField(default=default_attendance_config, blank=True)
     attendance_attention_days=models.PositiveIntegerField(default=7)
     points_attention_days=models.PositiveIntegerField(default=7)
     attention_grace_days=models.PositiveIntegerField(default=3)
@@ -81,6 +90,8 @@ class Group(models.Model):
     # XP earned before contribution-ledger rollout is preserved as an opening balance.
     historical_xp=models.PositiveBigIntegerField(default=0)
     include_inactive_members=models.BooleanField(default=False)
+    # null inherits programme defaults; [] explicitly disables scheduled attendance.
+    attendance_days=models.JSONField(null=True, blank=True, default=None)
     members=models.ManyToManyField(Profile,related_name='groups',blank=True)
 
     def save(self, *args, **kwargs):
@@ -126,6 +137,26 @@ class GroupXPContribution(models.Model):
     class Meta:
         constraints=[models.UniqueConstraint(fields=['group','transaction'],name='unique_group_xp_contribution')]
         indexes=[models.Index(fields=['group','created_at'],name='core_groupxp_group_date_idx')]
+
+class AttendanceScheduleChange(models.Model):
+    SCOPE_CHOICES = [('programme', 'Programme'), ('group', 'Group'), ('person', 'Person')]
+    programme = models.ForeignKey(Programme, on_delete=models.CASCADE, related_name='attendance_schedule_history')
+    scope_type = models.CharField(max_length=12, choices=SCOPE_CHOICES)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, null=True, blank=True, related_name='attendance_schedule_history')
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, null=True, blank=True, related_name='attendance_schedule_history')
+    # null means inherit from the next wider scope; [] explicitly means no days.
+    days = models.JSONField(null=True, blank=True, default=None)
+    effective_from = models.DateField()
+    changed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='attendance_schedule_changes')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['programme', 'scope_type', 'effective_from'], name='core_att_sched_scope_idx'),
+            models.Index(fields=['profile', 'effective_from'], name='core_att_sched_profile_idx'),
+            models.Index(fields=['group', 'effective_from'], name='core_att_sched_group_idx'),
+        ]
+
 
 class GroupTierUnlock(models.Model):
     group=models.ForeignKey(Group,on_delete=models.CASCADE,related_name='tier_unlocks')

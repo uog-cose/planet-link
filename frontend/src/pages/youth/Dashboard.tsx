@@ -199,19 +199,10 @@ export function YouthDashboard() {
     : Array.isArray(data.awards)
       ? data.awards
       : [];
-  const defaultMilestones = [
-    { tier: "silver", xp: 1000 },
-    { tier: "gold", xp: 2500 },
-    { tier: "diamond", xp: 5000 },
-  ];
-  const milestones = defaultMilestones.map(
-    (fallback: any) =>
-      configuredMilestones.find(
-        (m: any) => String(m.tier || "").toLowerCase() === fallback.tier,
-      ) || fallback,
+  const milestones = configuredMilestones.filter(
+    (m: any) => m && String(m.tier || "").trim() && Number(m.xp) > 0,
   );
   const lifetime = Number(data.profile?.lifetimeXp || 0);
-  // Quest champion follows the programme's configured XP target; it is not a hard-coded milestone.
   const target = Math.max(
     1,
     Number(
@@ -246,16 +237,25 @@ export function YouthDashboard() {
   const team = (data.groups || [])[0];
   const teamXp = Number(data.profile?.groupXp ?? team?.xp ?? 0);
   const teamTarget = Math.max(1, Number(team?.targetXp || target));
+  const teamAverageXp = Number(team?.averageXpPerMember ?? 0);
   const teamProgress = Math.max(
     0,
-    Math.min(100, Number(team?.progress ?? (teamXp / teamTarget) * 100)),
+    Math.min(100, Number(team?.progress ?? (teamAverageXp / teamTarget) * 100)),
   );
+  const teamMilestones = Array.isArray(team?.milestones)
+    ? [...team.milestones].sort(
+        (a: any, b: any) => Number(a.xp || 0) - Number(b.xp || 0),
+      )
+    : [];
+  const teamMilestonesDone = teamMilestones.filter(
+    (milestone: any) => milestone.unlocked,
+  ).length;
   const sortedMilestones = [...milestones].sort(
     (a: any, b: any) => Number(a.xp || 0) - Number(b.xp || 0),
   );
-  const nextMilestone =
-    sortedMilestones.find((m: any) => Number(m.xp || 0) > lifetime) ||
-    (lifetime < target ? { tier: "Quest champion", xp: target } : null);
+  const nextMilestone = sortedMilestones.find(
+    (m: any) => Number(m.xp || 0) > lifetime,
+  ) || null;
   const personalTarget = Math.max(1, Number(nextMilestone?.xp || target));
   const personalBase = sortedMilestones
     .filter((m: any) => Number(m.xp || 0) < personalTarget)
@@ -397,28 +397,21 @@ export function YouthDashboard() {
                   <Target size={14} /> YOUR QUEST MAP
                 </span>
                 <b>
-                  {doneCount}/{milestones.length} unlocked
+                  {milestones.length ? `${doneCount}/${milestones.length} unlocked` : "Not configured"}
                 </b>
               </div>
               <div className="yq-kid-inline-track">
-                {[...milestones]
+                {milestones.length ? [...milestones]
                   .sort(
                     (a: any, b: any) => Number(a.xp || 0) - Number(b.xp || 0),
                   )
-                  .filter(
-                    (m: any) =>
-                      Number(m.xp || 0) > 0 &&
-                      String(m.tier || "").toLowerCase() !== "quest champion",
-                  )
-                  .concat([
-                    { tier: "Quest champion", xp: target, bigGoal: true },
-                  ])
+                  .filter((m: any) => Number(m.xp || 0) > 0)
                   .map((m: any, i: number, stops: any[]) => {
                     const need = Number(m.xp || 0);
                     const done = lifetime >= need;
                     return (
                       <div
-                        className={`yq-kid-inline-stop ${done ? "is-done" : ""} ${m.bigGoal ? "is-finish" : ""}`}
+                        className={`yq-kid-inline-stop ${done ? "is-done" : ""}`}
                         key={`${m.tier || i}-${m.xp}`}
                       >
                         <span
@@ -436,22 +429,18 @@ export function YouthDashboard() {
                         </span>
                         <span className="yq-kid-inline-label">
                           <b>
-                            {m.bigGoal
-                              ? "Quest champion"
-                              : String(m.tier || `Stop ${i + 1}`).toLowerCase()}
+                            {String(m.tier || `Stop ${i + 1}`)}
                           </b>
                           <small>{need.toLocaleString()} XP</small>
                         </span>
                       </div>
                     );
-                  })}
+                  }) : <p className="muted">Your youth worker or administrator has not configured any milestones yet.</p>}
               </div>
-              {!nextMilestone && (
+              {milestones.length > 0 && !nextMilestone && (
                 <div className="yq-kid-next-prize">
                   <CheckCircle2 size={14} />
-                  <span>
-                    <b>Quest champion reached!</b> Amazing work!
-                  </span>
+                  <span><b>All configured milestones reached!</b> Amazing work!</span>
                 </div>
               )}
             </div>
@@ -482,7 +471,7 @@ export function YouthDashboard() {
               <span style={{ width: `${teamProgress}%` }} />
             </div>
             <div className="yq-kid-bar-labels">
-              <span>Collective team goal</span>
+              <span>Average team goal</span>
               <span>{Math.round(teamProgress)}% complete</span>
             </div>
             <div className="yq-kid-next-prize">
@@ -492,6 +481,52 @@ export function YouthDashboard() {
                   ? `Average ${Math.round(Number(team.averageXpPerMember || 0)).toLocaleString()} XP per eligible member · ${team.eligibleMembers} counted.`
                   : "Your group's competitive ranking appears when it meets the minimum team size."}
               </span>
+            </div>
+
+            <div className="yq-kid-inline-quest" aria-label="Your group XP milestones">
+              <div className="yq-kid-inline-quest-head">
+                <span>
+                  <Target size={14} /> GROUP QUEST MAP
+                </span>
+                <b>
+                  {teamMilestones.length
+                    ? `${teamMilestonesDone}/${teamMilestones.length} unlocked`
+                    : "Not configured"}
+                </b>
+              </div>
+              <div className="yq-kid-inline-track">
+                {teamMilestones.length ? (
+                  teamMilestones.map((milestone: any, index: number) => (
+                    <div
+                      className={`yq-kid-inline-stop ${milestone.unlocked ? "is-done" : ""}`}
+                      key={`${milestone.name}-${milestone.xp}-${index}`}
+                    >
+                      <span className="yq-kid-inline-dot">
+                        {milestone.unlocked
+                          ? <CheckCircle2 size={15} />
+                          : <LockKeyhole size={15} />}
+                      </span>
+                      <span className="yq-kid-inline-label">
+                        <b>{milestone.name}</b>
+                        <small>
+                          {Number(milestone.xp).toLocaleString()} group XP
+                          {milestone.prize ? ` · ${milestone.prize}` : ""}
+                        </small>
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="muted">
+                    Your youth worker or administrator has not configured any group milestones yet.
+                  </p>
+                )}
+              </div>
+              {teamMilestones.length > 0 && teamMilestonesDone === teamMilestones.length && (
+                <div className="yq-kid-next-prize">
+                  <CheckCircle2 size={14} />
+                  <span><b>All group milestones reached!</b> Amazing teamwork!</span>
+                </div>
+              )}
             </div>
           </article>
         </section>

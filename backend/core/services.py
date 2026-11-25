@@ -3,7 +3,7 @@ import json
 import logging
 from datetime import timedelta
 from django.conf import settings
-from django.db import transaction
+from django.db import transaction, models
 from django.utils import timezone
 from .config import CONFIG
 from .models import XPTransaction, Notification, PushSubscription, Reward, RewardAssignment, Badge, ProfileBadge, GroupTierUnlock, DailyLogin, LoginStreakAward, Profile, GroupXPContribution
@@ -243,7 +243,7 @@ def programme_local_date(programme, moment=None):
 
 
 def attendance_streak_multiplier(programme, streak):
-    """Return the highest multiplier for consecutive attended programme events."""
+    """Return the highest multiplier for consecutive assigned attendance days."""
     rules = programme.streak_rules if programme and isinstance(programme.streak_rules, list) else []
     multiplier = 1.0
     for rule in rules:
@@ -256,6 +256,148 @@ def attendance_streak_multiplier(programme, streak):
             continue
     return multiplier
 
+
+
+def _clean_attendance_days(value):
+    if not isinstance(value, list):
+        return None
+    days = []
+    for item in value:
+        try:
+            day = int(item)
+        except (TypeError, ValueError):
+            continue
+        if 0 <= day <= 6 and day not in days:
+            days.append(day)
+    return sorted(days)
+
+def _attendance_schedule_history(profile, programme):
+    from core.models import AttendanceScheduleChange, GroupMembership
+    memberships = list(GroupMembership.objects.filter(
+        profile=profile, group__programme=programme,
+    ).select_related('group').order_by('joined_at', 'id'))
+    group_memberships = {}
+    for membership in memberships:
+        group_memberships.setdefault(membership.group_id, {'group': membership.group, 'memberships': []})['memberships'].append({
+            'joined_at': membership.joined_at, 'left_at': membership.left_at,
+        })
+    # Older profiles may not have history if they were assigned through a legacy path.
+    for group in profile.groups.filter(programme=programme).exclude(id__in=list(group_memberships)):
+        group_memberships[group.id] = {'group': group, 'memberships': [{'joined_at': None, 'left_at': None}]}
+    group_ids = list(group_memberships)
+    rows = AttendanceScheduleChange.objects.filter(programme=programme).filter(
+        models.Q(scope_type='programme') | models.Q(profile=profile) | models.Q(group_id__in=group_ids)
+    ).order_by('effective_from', 'id')
+    history = {'programme': [], 'person': [], 'groups': {group_id: [] for group_id in group_ids}}
+    for row in rows:
+        if row.scope_type == 'programme':
+            history['programme'].append(row)
+        elif row.scope_type == 'person':
+            history['person'].append(row)
+        elif row.scope_type == 'group' and row.group_id in history['groups']:
+            history['groups'][row.group_id].append(row)
+    return history, list(group_memberships.values())
+
+def _latest_schedule_change(rows, on_date):
+    for row in reversed(rows):
+        if row.effective_from <= on_date:
+            return row
+    return None
+
+def _resolve_attendance_days(profile, programme, on_date, history, groups):
+    person_change = _latest_schedule_change(history['person'], on_date)
+    if person_change is not None:
+        person_days = _clean_attendance_days(person_change.days)
+        if person_days is not None:
+            return person_days
+    elif profile.attendance_days is not None:
+        return _clean_attendance_days(profile.attendance_days) or []
+
+    group_days = set()
+    has_group_override = False
+    for entry in groups:
+        group = entry['group']
+        is_member_on_date = False
+        for membership in entry['memberships']:
+            joined_date = programme_local_date(programme, membership['joined_at']) if membership['joined_at'] else on_date
+            left_date = programme_local_date(programme, membership['left_at']) if membership['left_at'] else None
+            if joined_date <= on_date and (left_date is None or on_date < left_date):
+                is_member_on_date = True
+                break
+        if not is_member_on_date:
+            continue
+        change = _latest_schedule_change(history['groups'].get(group.id, []), on_date)
+        if change is not None:
+            resolved = _clean_attendance_days(change.days)
+            if resolved is not None:
+                has_group_override = True
+                group_days.update(resolved)
+        elif group.attendance_days is not None:
+            has_group_override = True
+            group_days.update(_clean_attendance_days(group.attendance_days) or [])
+    if has_group_override:
+        # If a person belongs to multiple groups, their scheduled days are the
+        # union of the groups' explicit schedules. An individual override wins.
+        return sorted(group_days)
+
+    programme_change = _latest_schedule_change(history['programme'], on_date)
+    if programme_change is not None:
+        return _clean_attendance_days(programme_change.days) or []
+    config = programme.attendance_config if isinstance(programme.attendance_config, dict) else {}
+    return _clean_attendance_days(config.get('default_days', [])) or []
+
+def record_attendance_schedule_change(programme, scope_type, days, *, actor=None, group=None, profile=None, previous_days=None, effective_from=None):
+    """Persist a new rule while retaining the prior rule for historical streaks."""
+    from datetime import date
+    from core.models import AttendanceScheduleChange
+    filters = {'programme': programme, 'scope_type': scope_type}
+    if scope_type == 'group':
+        filters['group'] = group
+    elif scope_type == 'person':
+        filters['profile'] = profile
+    history = AttendanceScheduleChange.objects.filter(**filters)
+    if not history.exists():
+        AttendanceScheduleChange.objects.create(
+            **filters, days=previous_days, effective_from=date(1970, 1, 1), changed_by=actor,
+        )
+    return AttendanceScheduleChange.objects.create(
+        **filters, days=days,
+        effective_from=effective_from or programme_local_date(programme, timezone.now()),
+        changed_by=actor,
+    )
+
+def effective_attendance_days(profile, programme=None, on_date=None):
+    """Resolve the effective schedule for a date: person, groups, programme."""
+    programme = programme or (profile.programme if profile else None)
+    if not profile or not programme:
+        return []
+    local_date = on_date or programme_local_date(programme, timezone.now())
+    history, groups = _attendance_schedule_history(profile, programme)
+    return _resolve_attendance_days(profile, programme, local_date, history, groups)
+
+def scheduled_attendance_streak(profile, programme=None, moment=None):
+    """Count attended scheduled opportunities using the schedule effective on each date."""
+    from datetime import timedelta
+    from core.models import Attendance
+    programme = programme or (profile.programme if profile else None)
+    if not profile or not programme:
+        return 0
+    today = programme_local_date(programme, moment or timezone.now())
+    history, groups = _attendance_schedule_history(profile, programme)
+    attended = set(Attendance.objects.filter(
+        participant=profile, session__programme=programme, attendance_date__lte=today
+    ).values_list('attendance_date', flat=True))
+    cursor = today
+    streak = 0
+    # A safety cap avoids unbounded date iteration for old accounts.
+    for _ in range(3660):
+        assigned_days = _resolve_attendance_days(profile, programme, cursor, history, groups)
+        if cursor.weekday() in assigned_days:
+            if cursor not in attended:
+                break
+            streak += 1
+        cursor -= timedelta(days=1)
+    return streak
 
 def event_attendance_streak(profile, programme=None, moment=None):
     """Count the current run of consecutive programme events attended.

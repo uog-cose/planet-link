@@ -2,7 +2,7 @@
 @import "./styles/index.css";
 
 
-/* Separate login and event streaks from the existing daily attendance streak. */
+/* Separate login streaks from scheduled onsite attendance streaks. */
 .yq-kid-streak-extra { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 14px 0; }
 .yq-kid-streak-extra > div { display: flex; flex-direction: column; gap: 5px; padding: 13px 15px; border: 1px solid var(--border, #d8d6c9); border-radius: 14px; background: var(--surface2, #f3f0e8); min-width: 0; }
 .yq-kid-streak-extra strong { font-size: .82rem; color: var(--muted, #687970); }

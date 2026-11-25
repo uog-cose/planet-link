@@ -7,13 +7,18 @@ from core.models import GroupTierUnlock
 @require_http_methods(["GET"])
 def worker_participants(request):
     if not require_role(request,["worker","admin"]): return ok({"detail":"Forbidden"},403)
-    programme=active_programme_for(profile_for(request)); groups=list(Group.objects.filter(programme=programme).annotate(member_count=Count('members',filter=Q(members__role='youth',members__user__is_active=True))).order_by('name').values('id','name','member_count')); return ok({"items":[{"id":p.id,"userId":p.user_id,"gamertag":p.gamertag,"avatar":p.avatar,"avatarImageUrl":(request.build_absolute_uri(f'/api/profile/avatar-image/{p.id}/') if p.avatar_image else None),"milestoneTier":milestone_tier(p),"xp":p.current_xp} for p in Profile.objects.filter(role="youth",programme=programme,user__is_active=True).order_by("gamertag")],"groups":[dict(g,memberCount=g.get('member_count',0)) for g in groups]})
+    actor = profile_for(request)
+    programme = active_programme_for(actor)
+    group_qs = Group.objects.all() if actor.role == "admin" else Group.objects.filter(programme=programme)
+    people_qs = Profile.objects.filter(role="youth", user__is_active=True) if actor.role == "admin" else Profile.objects.filter(role="youth", programme=programme, user__is_active=True)
+    groups=list(group_qs.annotate(member_count=Count('members',filter=Q(members__role='youth',members__user__is_active=True))).order_by('programme__name','name').values('id','name','programme_id','member_count'))
+    return ok({"items":[{"id":p.id,"userId":p.user_id,"gamertag":p.gamertag,"avatar":p.avatar,"avatarImageUrl":(request.build_absolute_uri(f'/api/profile/avatar-image/{p.id}/') if p.avatar_image else None),"milestoneTier":milestone_tier(p),"xp":p.current_xp,"programmeId":p.programme_id} for p in people_qs.select_related('programme').order_by("programme__name","gamertag")],"groups":[dict(g,memberCount=g.get('member_count',0)) for g in groups]})
 
 @require_http_methods(["POST"])
 def assign_avatar(request):
     if not require_role(request,["worker","admin"]): return ok({"detail":"Forbidden"},403)
     body=parse_json(request) or {}
-    try: target=Profile.objects.get(id=int(body.get("profileId")),role="youth",programme=active_programme_for(profile_for(request)))
+    try: target=Profile.objects.get(id=int(body.get("profileId")),role="youth") if profile_for(request).role=='admin' else Profile.objects.get(id=int(body.get("profileId")),role="youth",programme=active_programme_for(profile_for(request)))
     except (ValueError,TypeError,Profile.DoesNotExist): return ok({"detail":"Young person not found"},404)
     avatar=str(body.get("avatar","orbit"))[:40]
     if avatar not in {"orbit","comet","rocket","star","moon","wave","alex","ben","charlie","daniel","ethan","finley","george","henry","jack","logan","ava","bella","chloe","daisy","ella","freya","grace","holly","isabella","sophie"}: return ok({"detail":"Avatar not available"},400)
@@ -49,7 +54,7 @@ def assign_avatar_upload(request):
         buffer=io.BytesIO(); image.save(buffer,format=fmt_out,optimize=True)
     except Exception:
         return ok({'detail':'The avatar file could not be validated as a safe image'},400)
-    try: target=Profile.objects.get(id=int(request.POST.get('profileId')),role='youth',programme=active_programme_for(actor),user__is_active=True)
+    try: target=Profile.objects.get(id=int(request.POST.get('profileId')),role='youth',user__is_active=True) if actor.role=='admin' else Profile.objects.get(id=int(request.POST.get('profileId')),role='youth',programme=active_programme_for(actor),user__is_active=True)
     except (ValueError,TypeError,Profile.DoesNotExist):return ok({'detail':'Young person not found'},404)
     if target.avatar_image: target.avatar_image.delete(save=False)
     target.avatar_image.save(f'{target.id}{out_ext}',ContentFile(buffer.getvalue()),save=False)
@@ -62,7 +67,7 @@ def staff_accounts(request):
     actor=require_role(request,['worker','admin'])
     if not actor:return ok({'detail':'Forbidden'},403)
     if request.method=='GET':
-        qs=User.objects.filter(profile__isnull=False,profile__programme=active_programme_for(actor)).exclude(username__startswith='deleted_').exclude(profile__gamertag='Deleted account').select_related('profile')
+        qs=User.objects.filter(profile__isnull=False).select_related('profile','profile__programme').exclude(username__startswith='deleted_') if actor.role=='admin' else User.objects.filter(profile__isnull=False,profile__programme=active_programme_for(actor)).exclude(username__startswith='deleted_').exclude(profile__gamertag='Deleted account').select_related('profile')
         if actor.role=='worker':qs=qs.filter(profile__role='youth')
         q=str(request.GET.get('q','')).strip()
         role=str(request.GET.get('role','')).strip()
@@ -74,10 +79,30 @@ def staff_accounts(request):
         try: limit=max(10,min(100,int(request.GET.get('limit','40'))))
         except ValueError: limit=40
         rows=qs.order_by('profile__role','profile__gamertag')[(page-1)*limit:page*limit]
-        return ok({'items':[{'userId':u.id,'profileId':u.profile.id,'username':u.username,'gamertag':u.profile.gamertag,'role':u.profile.role,'avatar':u.profile.avatar,'isActive':bool(u.is_active)} for u in rows],'total':total,'page':page,'limit':limit,'hasMore':page*limit<total})
+        return ok({'items':[{'userId':u.id,'profileId':u.profile.id,'username':u.username,'gamertag':u.profile.gamertag,'role':u.profile.role,'avatar':u.profile.avatar,'isActive':bool(u.is_active),'programmeId':u.profile.programme_id,'programmeName':u.profile.programme.name if u.profile.programme_id else None} for u in rows],'total':total,'page':page,'limit':limit,'hasMore':page*limit<total})
     body=parse_json(request) or {}
+    if body.get('action') == 'reassign_programme':
+        if actor.role != 'admin':
+            return ok({'detail':'Only administrators can reassign programme membership.'},403)
+        try:
+            target = User.objects.select_related('profile').get(id=int(body.get('userId')), profile__isnull=False)
+            destination = Programme.objects.get(id=int(body.get('programmeId')), active=True, status='active')
+        except (TypeError, ValueError, User.DoesNotExist, Programme.DoesNotExist):
+            return ok({'detail':'Select a valid account and active destination programme.'},404)
+        profile = target.profile
+        old_programme_id = profile.programme_id
+        if old_programme_id == destination.id:
+            return ok({'ok':True,'programmeId':destination.id,'detail':'Account is already assigned to this programme.'})
+        with transaction.atomic():
+            GroupMembership.objects.filter(profile=profile,status='active',left_at__isnull=True).update(status='transferred',left_at=timezone.now(),changed_by=request.user,reason='Programme reassignment')
+            profile.groups.clear()
+            profile.programme = destination
+            profile.save(update_fields=['programme','updated_at'])
+            ProgrammeMembership.objects.get_or_create(user=target,programme=destination)
+            AuditLog.objects.create(actor=request.user,programme=destination,action='profile_reassigned_programme',target=str(profile.id),detail={'fromProgrammeId':old_programme_id,'toProgrammeId':destination.id})
+        return ok({'ok':True,'programmeId':destination.id})
     if body.get('action') in {'set_access','delete'}:
-        try: target=User.objects.select_related('profile').get(id=int(body.get('userId')),profile__programme=active_programme_for(actor))
+        try: target=User.objects.select_related('profile').get(id=int(body.get('userId'))) if actor.role=='admin' else User.objects.select_related('profile').get(id=int(body.get('userId')),profile__programme=active_programme_for(actor))
         except (TypeError,ValueError,User.DoesNotExist,Profile.DoesNotExist): return ok({'detail':'Account not found'},404)
         if target.id==request.user.id: return ok({'detail':'You cannot change your own account access here'},400)
         target_profile=target.profile
@@ -123,11 +148,12 @@ def staff_groups(request):
     actor=require_role(request,['worker','admin'])
     if not actor:return ok({'detail':'Forbidden'},403)
     programme=active_programme_for(actor)
-    if not programme:return ok({'detail':'No active programme'},400)
+    if not programme and actor.role != 'admin':return ok({'detail':'No active programme'},400)
     if request.method=='GET':
         items=[]
-        for g in Group.objects.filter(programme=programme).prefetch_related('members').order_by('name'):
-            member_qs=g.members.filter(role='youth',programme=programme)
+        group_queryset = Group.objects.all() if actor.role == 'admin' else Group.objects.filter(programme=programme)
+        for g in group_queryset.prefetch_related('members','programme').order_by('programme__name','name'):
+            member_qs=g.members.filter(role='youth',programme=g.programme)
             active_member_qs=member_qs.filter(user__is_active=True)
             member_ids=list(member_qs.values_list('id',flat=True))
             # The group ledger is immutable. Membership edits must never reassign
@@ -138,13 +164,22 @@ def staff_groups(request):
                 Group.objects.filter(pk=g.pk).update(xp=total)
                 g.xp=total
             eligible_qs=member_qs if g.include_inactive_members else active_member_qs
-            eligible_count=eligible_qs.count()
-            average_xp=round(total/eligible_count,2) if eligible_count else 0
+            eligible_people=list(eligible_qs.only('id'))
+            eligible_count=len(eligible_people)
+            scoring_xp=0
+            for person in eligible_people:
+                membership=GroupMembership.objects.filter(group=g,profile=person,status__in=['active','inactive'],left_at__isnull=True).order_by('-joined_at').first()
+                contributions=GroupXPContribution.objects.filter(group=g,transaction__target=person)
+                if membership: contributions=contributions.filter(created_at__gte=membership.joined_at)
+                scoring_xp += int(contributions.aggregate(total=Sum('amount'))['total'] or 0)
+            scoring_xp = max(0, scoring_xp + int(g.historical_xp or 0))
+            average_xp=round(scoring_xp/eligible_count,2) if eligible_count else 0
             tiers=g.tier_targets if isinstance(g.tier_targets,list) else []
             valid_tiers=sorted([x for x in tiers if isinstance(x,dict) and str(x.get('name','')).strip() and str(x.get('xp','')).isdigit() and int(x.get('xp',0))>0],key=lambda x:int(x['xp']))
             next_tier=next((x for x in valid_tiers if total<int(x['xp'])),None)
-            items.append({'id':g.id,'name':g.name,'xp':total,'memberIds':member_ids,'memberNames':list(member_qs.values_list('gamertag',flat=True)),'activeMemberCount':active_member_qs.count(),'eligibleMembers':eligible_count,'averageXpPerMember':average_xp,'includeInactiveMembers':g.include_inactive_members,'tierTargets':valid_tiers,'nextTier':next_tier,'pointsToNext':max(0,int(next_tier['xp'])-total) if next_tier else 0,'progressPercent':min(100,round(total*100/int(next_tier['xp']))) if next_tier else 100})
-        return ok({'items':items,'groupScoringConfig':programme.group_scoring_config})
+            items.append({'id':g.id,'name':g.name,'programmeId':g.programme_id,'programmeName':g.programme.name,'xp':total,'memberIds':member_ids,'memberNames':list(member_qs.values_list('gamertag',flat=True)),'activeMemberCount':active_member_qs.count(),'eligibleMembers':eligible_count,'averageXpPerMember':average_xp,'scoringXp':scoring_xp,'includeInactiveMembers':g.include_inactive_members,'tierTargets':valid_tiers,'nextTier':next_tier,'pointsToNext':max(0,int(next_tier['xp'])-total) if next_tier else 0,'progressPercent':min(100,round(total*100/int(next_tier['xp']))) if next_tier else 100})
+        return ok({'items':items,'groupScoringConfig':programme.group_scoring_config if programme else {}})
+    if not programme:return ok({'detail':'Select an active programme before creating a group'},400)
     body=parse_json(request) or {}; name=str(body.get('name','')).strip()[:120]
     if not name:return ok({'detail':'Group name is required'},400)
     ids=body.get('memberIds',[]) or []
@@ -164,14 +199,14 @@ def staff_group_progress(request):
     actor=require_role(request,['worker','admin'])
     if not actor:return ok({'detail':'Forbidden'},403)
     programme=active_programme_for(actor)
-    if not programme:return ok({'detail':'No active programme'},400)
+    if not programme and actor.role != 'admin':return ok({'detail':'No active programme'},400)
     if request.method=='GET':
         # Reuse the canonical list calculation, including exact ledger totals.
         return staff_groups(request)
     body=parse_json(request) or {}
     try: group_id=safe_int(body.get('groupId'),minimum=1)
     except ValueError:return ok({'detail':'Invalid group'},400)
-    group=Group.objects.filter(pk=group_id,programme=programme).first()
+    group=(Group.objects.filter(pk=group_id).first() if actor.role=='admin' else Group.objects.filter(pk=group_id,programme=programme).first())
     if not group:return ok({'detail':'Group not found'},404)
     tiers=body.get('tiers')
     if not isinstance(tiers,list) or len(tiers)>20:return ok({'detail':'Provide up to 20 tier targets'},400)
@@ -191,9 +226,9 @@ def staff_group_progress(request):
             unlock,created=GroupTierUnlock.objects.get_or_create(group=group,threshold=int(tier['xp']),defaults={'tier_name':tier['name'],'prize':tier['prize']})
             if created:
                 prize_text=f" Prize: {unlock.prize}." if unlock.prize else ''
-                for member in group.members.filter(role='youth',programme_id=programme.id,user__is_active=True):
+                for member in group.members.filter(role='youth',programme_id=group.programme_id,user__is_active=True):
                     create_notification(profile=member,title=f"{group.name} unlocked {unlock.tier_name}!",body=f"Your group reached {unlock.threshold:,} XP.{prize_text}",kind='reward',url='/rewards')
-    AuditLog.objects.create(actor=request.user,programme=programme,action='group_tiers_updated',target=str(group.id),detail={'tiers':group.tier_targets})
+    AuditLog.objects.create(actor=request.user,programme=group.programme,action='group_tiers_updated',target=str(group.id),detail={'tiers':group.tier_targets})
     return ok({'ok':True,'tiers':group.tier_targets})
 
 @require_http_methods(["POST"])
@@ -203,7 +238,7 @@ def assign_group_members(request):
     body=parse_json(request) or {}
     try: group_id=safe_int(body.get('groupId'),minimum=1)
     except ValueError:return ok({'detail':'Invalid group'},400)
-    group=Group.objects.filter(id=group_id,programme=active_programme_for(actor)).first()
+    group=(Group.objects.filter(id=group_id).first() if actor.role=='admin' else Group.objects.filter(id=group_id,programme=active_programme_for(actor)).first())
     if not group:return ok({'detail':'Group not found'},404)
     member_ids=body.get('memberIds') or []
     if not isinstance(member_ids,list):return ok({'detail':'Member selection must be a list'},400)

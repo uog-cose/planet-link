@@ -47,6 +47,16 @@ export function AdminConfig() {
   const [visibilityMsg, setVisibilityMsg] = useState("");
   const [loadError, setLoadError] = useState("");
   const [configSearch, setConfigSearch] = useState("");
+  const [attendanceTargets, setAttendanceTargets] = useState<any>(null);
+  const [attendanceTargetType, setAttendanceTargetType] = useState<"group" | "person">("group");
+  const [attendanceTargetId, setAttendanceTargetId] = useState("");
+  const [attendanceTargetDays, setAttendanceTargetDays] = useState<number[]>([]);
+  const [attendanceOverride, setAttendanceOverride] = useState(true);
+  const [attendanceScheduleMessage, setAttendanceScheduleMessage] = useState("");
+  const [restoreProfileId, setRestoreProfileId] = useState("");
+  const [restoreDate, setRestoreDate] = useState("");
+  const [restoreReason, setRestoreReason] = useState("");
+  const [restoreMessage, setRestoreMessage] = useState("");
 
   const initialSnapshot = useRef("");
   const [confirm, setConfirm] = useState<null | {
@@ -65,6 +75,7 @@ export function AdminConfig() {
       streak_rules: Array.isArray(x.streak_rules) ? x.streak_rules : [],
       login_reward_config: x.login_reward_config || { enabled: true, daily_xp: 10, timezone: 'Europe/London', milestones: [{days:2,bonus_xp:20},{days:3,bonus_xp:30},{days:5,bonus_xp:75},{days:7,bonus_xp:150}] },
       group_scoring_config: x.group_scoring_config || { minimum_group_size: 2, ranking_periods: ['weekly', 'monthly', 'overall'] },
+      attendance_config: x.attendance_config?.default_days ? x.attendance_config : { default_days: [0, 1, 2, 3, 4, 5, 6] },
       public_config: x.public_config || {},
     });
     setDate(x.starts || "");
@@ -76,6 +87,31 @@ export function AdminConfig() {
       setLoadError(e instanceof Error ? e.message : t("errorBody")),
     );
   }, []);
+
+  useEffect(() => {
+    if (!p?.id) return;
+    api<any>("/attendance/schedule/").then(setAttendanceTargets).catch(() => setAttendanceTargets(null));
+  }, [p?.id]);
+
+  async function restoreAttendance() {
+    setRestoreMessage("");
+    try {
+      await api("/attendance/schedule/", { method: "POST", body: JSON.stringify({ action: "restore", profileId: Number(restoreProfileId), date: restoreDate, reason: restoreReason }) });
+      setRestoreMessage("Attendance restored. No XP was backdated.");
+      setRestoreReason("");
+    } catch (error) { setRestoreMessage(error instanceof Error ? error.message : t("errorBody")); }
+  }
+
+  async function saveAttendanceOverride() {
+    if (!attendanceTargetId) return;
+    setAttendanceScheduleMessage("");
+    try {
+      await api("/attendance/schedule/", { method: "POST", body: JSON.stringify({ targetType: attendanceTargetType, targetId: Number(attendanceTargetId), days: attendanceTargetDays, override: attendanceOverride }) });
+      setAttendanceScheduleMessage("Attendance schedule saved.");
+      const refreshed = await api<any>("/attendance/schedule/");
+      setAttendanceTargets(refreshed);
+    } catch (error) { setAttendanceScheduleMessage(error instanceof Error ? error.message : t("errorBody")); }
+  }
 
   async function save() {
     if (!p) return;
@@ -93,6 +129,7 @@ export function AdminConfig() {
           streak_rules: p.streak_rules || [],
           login_reward_config: p.login_reward_config || {},
           group_scoring_config: p.group_scoring_config || { minimum_group_size: 2, ranking_periods: ['weekly', 'monthly', 'overall'] },
+          attendance_config: p.attendance_config || { default_days: [] },
           attendance_attention_days: Number(p.attendance_attention_days || 7),
           points_attention_days: Number(p.points_attention_days || 7),
           attention_grace_days: Number(p.attention_grace_days || 3),
@@ -117,6 +154,7 @@ export function AdminConfig() {
           streak_rules: x.streak_rules || [],
           login_reward_config: x.login_reward_config || p.login_reward_config,
           group_scoring_config: x.group_scoring_config || p.group_scoring_config,
+          attendance_config: x.attendance_config || p.attendance_config,
           public_config: x.public_config || {},
         });
       initialSnapshot.current = JSON.stringify({ ...x, starts: date || "" });
@@ -178,7 +216,7 @@ export function AdminConfig() {
       ...p,
       streak_rules: [
         ...p.streak_rules,
-        { days: last ? Number(last.days) + 1 : 3, multiplier: 1.3 },
+        { events: last ? Number(last.events ?? last.days) + 1 : 3, multiplier: 1.3 },
       ],
     });
   }
@@ -390,6 +428,67 @@ export function AdminConfig() {
               }
             />
           </label>
+          <div className="attendance-days-config">
+            <div>
+              <strong>Default attendance days</strong>
+              <p className="muted">These days apply to everyone unless a group or individual has an override.</p>
+            </div>
+            <div className="weekday-checkboxes">
+              {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day, index) => {
+                const selected = (p.attendance_config?.default_days || []).includes(index);
+                return <label className="weekday-option" key={day}>
+                  <input type="checkbox" checked={selected} onChange={(e) => {
+                    const current = p.attendance_config?.default_days || [];
+                    const next = e.target.checked ? [...current, index] : current.filter((value: number) => value !== index);
+                    setP({ ...p, attendance_config: { ...(p.attendance_config || {}), default_days: next.sort((a: number, b: number) => a - b) } });
+                  }} />
+                  <span>{day}</span>
+                </label>;
+              })}
+            </div>
+          </div>
+          <div className="attendance-days-config">
+            <strong>Group and individual schedules</strong>
+            <p className="muted">Set a custom schedule for a group or a young person. Clear the override to inherit the programme or group schedule.</p>
+            <div className="grid-2">
+              <label>Assignment type
+                <select value={attendanceTargetType} onChange={(e) => { setAttendanceTargetType(e.target.value as "group" | "person"); setAttendanceTargetId(""); setAttendanceTargetDays([]); }}>
+                  <option value="group">Group</option><option value="person">Young person</option>
+                </select>
+              </label>
+              <label>{attendanceTargetType === "group" ? "Group" : "Young person"}
+                <select value={attendanceTargetId} onChange={(e) => {
+                  const id = e.target.value; setAttendanceTargetId(id);
+                  const rows = attendanceTargetType === "group" ? attendanceTargets?.groups : attendanceTargets?.people;
+                  const found = (rows || []).find((row: any) => String(row.id) === id);
+                  setAttendanceTargetDays(Array.isArray(found?.attendanceDays) ? found.attendanceDays : []);
+                  setAttendanceOverride(found?.attendanceDays !== null);
+                }}>
+                  <option value="">Choose…</option>
+                  {(attendanceTargetType === "group" ? (attendanceTargets?.groups || []) : (attendanceTargets?.people || [])).map((row: any) => <option key={row.id} value={row.id}>{row.name || row.gamertag}</option>)}
+                </select>
+              </label>
+            </div>
+            <label className="weekday-option"><input type="checkbox" checked={attendanceOverride} onChange={(e) => setAttendanceOverride(e.target.checked)} /> Use custom schedule (otherwise inherit)</label>
+            {attendanceOverride && <div className="weekday-checkboxes">
+              {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day, index) => <label className="weekday-option" key={day}><input type="checkbox" checked={attendanceTargetDays.includes(index)} onChange={(e) => setAttendanceTargetDays(current => e.target.checked ? [...current, index].sort() : current.filter(value => value !== index))} /><span>{day}</span></label>)}
+            </div>}
+            <div className="attendance-restore-panel">
+              <strong>Restore a missed attendance record</strong>
+              <p className="muted">For genuine scanning or recording problems. This updates the streak but never awards historical XP.</p>
+              <div className="grid-2">
+                <label>Young person
+                  <select value={restoreProfileId} onChange={(e) => setRestoreProfileId(e.target.value)}><option value="">Choose…</option>{(attendanceTargets?.people || []).map((person: any) => <option key={person.id} value={person.id}>{person.gamertag}</option>)}</select>
+                </label>
+                <label>Attendance date<input type="date" value={restoreDate} onChange={(e) => setRestoreDate(e.target.value)} /></label>
+              </div>
+              <label>Reason<textarea value={restoreReason} onChange={(e) => setRestoreReason(e.target.value)} minLength={8} maxLength={240} rows={2} placeholder="Explain why the attendance record needs correcting" /></label>
+              <Button variant="secondary" onClick={restoreAttendance} disabled={!restoreProfileId || !restoreDate || restoreReason.trim().length < 8}>Restore attendance</Button>
+              {restoreMessage && <p className="muted" role="status">{restoreMessage}</p>}
+            </div>
+            <Button onClick={saveAttendanceOverride} disabled={!attendanceTargetId}>Save assignment schedule</Button>
+            {attendanceScheduleMessage && <p className="muted" role="status">{attendanceScheduleMessage}</p>}
+          </div>
           <div className="grid-2">
             <label>
               {t("attendanceAttentionDays")}
@@ -477,7 +576,7 @@ export function AdminConfig() {
               : "config-search-hidden"
           }
           title="QR onsite attendance rewards"
-          description="A youth worker displays a short-lived QR code at an onsite event. One successful scan per young person per programme-local day earns base XP multiplied by the consecutive check-in streak."
+          description="A youth worker displays a short-lived attendance QR. Only assigned attendance days count towards a streak, and one successful scan per young person per programme-local day earns base XP multiplied by the streak reward."
           summary={`${p.streak_rules.length} ${t("rules").toLowerCase()}`}
           icon={Flame}
         >
@@ -491,19 +590,19 @@ export function AdminConfig() {
             </Button>
           </div>
           {p.streak_rules.map((r: any, i: number) => (
-            <div className="milestone-editor" key={`${r.days}-${i}`}>
+            <div className="milestone-editor" key={`${r.events ?? r.days}-${i}`}>
               <label>
                 {t("consecutiveDays")}
                 <input
                   type="number"
                   min="1"
                   max="365"
-                  value={r.days}
+                  value={r.events ?? r.days ?? 1}
                   onChange={(e) =>
                     setP({
                       ...p,
                       streak_rules: p.streak_rules.map((x: any, j: number) =>
-                        j === i ? { ...x, days: Number(e.target.value) } : x,
+                        j === i ? { ...x, events: Number(e.target.value) } : x,
                       ),
                     })
                   }

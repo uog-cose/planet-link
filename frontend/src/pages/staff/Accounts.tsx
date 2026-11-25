@@ -8,6 +8,8 @@ import {
   ShieldCheck,
   ShieldOff,
   Trash2,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { avatarOptions } from "../../components/AvatarPicker";
 import { avatarAsset } from "../../components/QuestArt";
@@ -22,6 +24,8 @@ type Account = {
   role: string;
   avatar?: string;
   isActive: boolean;
+  programmeId?: number | null;
+  programmeName?: string | null;
 };
 const roleLabel = (role: string) =>
   role === "youth" ? "Player" : role === "worker" ? "Youth worker" : "Admin";
@@ -44,6 +48,8 @@ export function Accounts({ role }: { role: "worker" | "admin" }) {
     avatar: "alex",
   });
   const [confirm, setConfirm] = useState<any>(null);
+  const [programmes, setProgrammes] = useState<any[]>([]);
+  const [showCreatePassword, setShowCreatePassword] = useState(false);
   const { show } = useToast();
   const load = () =>
     api<any>(
@@ -69,6 +75,10 @@ export function Accounts({ role }: { role: "worker" | "admin" }) {
     const id = window.setTimeout(load, 180);
     return () => window.clearTimeout(id);
   }, [tab, query]);
+  useEffect(() => {
+    if (role !== "admin") return;
+    api<any>("/admin/instances/").then((r) => setProgrammes(r.items || [])).catch(() => setProgrammes([]));
+  }, [role]);
   const tabs =
     role === "admin"
       ? [
@@ -155,11 +165,10 @@ export function Accounts({ role }: { role: "worker" | "admin" }) {
           </label>
           <label>
             {t("password")}
-            <input
-              type="password"
-              value={f.password}
-              onChange={(e) => setF({ ...f, password: e.target.value })}
-            />
+            <div className="password-input-wrap">
+              <input type={showCreatePassword ? "text" : "password"} value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} />
+              <button type="button" className="password-visibility" aria-label={showCreatePassword ? "Hide password" : "Show password"} onClick={() => setShowCreatePassword(v => !v)}>{showCreatePassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
+            </div>
           </label>
           {tab === "youth" && (
             <div>
@@ -241,6 +250,18 @@ export function Accounts({ role }: { role: "worker" | "admin" }) {
                       {x.isActive ? "Sign-in enabled" : "Sign-in disabled"}
                     </span>
                   </div>
+                  {role === "admin" && x.role !== "admin" && <label>
+                    Programme assignment
+                    <select value={x.programmeId || ""} onChange={(e) => {
+                      const programmeId = Number(e.target.value);
+                      if (!programmeId || programmeId === x.programmeId) return;
+                      void accountAction({ action: "reassign_programme", userId: x.userId, programmeId }, `${x.gamertag} reassigned to the selected programme`);
+                    }}>
+                      <option value="">No programme</option>
+                      {programmes.map((programme) => <option key={programme.id} value={programme.id}>{programme.name}</option>)}
+                    </select>
+                    <small className="muted">Changing programme closes current group memberships but preserves historical XP and audit records.</small>
+                  </label>}
                   {x.role === "youth" && (
                     <label className="account-avatar-control">
                       Profile picture

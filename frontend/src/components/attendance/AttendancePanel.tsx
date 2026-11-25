@@ -10,57 +10,14 @@ import { QrCode, RefreshCw } from "lucide-react";
 
 const REFRESH_LEAD_MS = 8000;
 
-type ProgrammeEvent = {
-  id: number;
-  title: string;
-  startAt: string;
-  endAt: string;
-  status: string;
-};
-
 export function AttendancePanel() {
-  const [events, setEvents] = useState<ProgrammeEvent[]>([]);
-  const [eventId, setEventId] = useState("");
   const [token, setToken] = useState("");
   const [expires, setExpires] = useState("");
   const [error, setError] = useState("");
   const generating = useRef(false);
 
-  const loadEvents = useCallback(async () => {
-    try {
-      const data = await api<{ events: ProgrammeEvent[] }>("/map-event/");
-      const available = (data.events || []).filter(
-        (event) => event.status !== "cancelled"
-      );
-
-      setEvents(available);
-
-      setEventId((current) => {
-        if (current && available.some((event) => String(event.id) === current)) {
-          return current;
-        }
-
-        const now = Date.now();
-        const active = available.find(
-          (event) =>
-            new Date(event.startAt).getTime() <= now &&
-            new Date(event.endAt).getTime() > now
-        );
-
-        return active ? String(active.id) : "";
-      });
-    } catch (err) {
-      setError((err as Error).message);
-    }
-  }, []);
-
   const generate = useCallback(async () => {
     if (generating.current) return;
-
-    if (!eventId) {
-      setError("Please select a programme event first.");
-      return;
-    }
 
     generating.current = true;
     setError("");
@@ -72,7 +29,7 @@ export function AttendancePanel() {
         expiresAt: string;
       }>("/attendance/session/", {
         method: "POST",
-        body: JSON.stringify({ eventId: Number(eventId) }),
+        body: JSON.stringify({}),
       });
 
       setToken(data.token);
@@ -82,11 +39,7 @@ export function AttendancePanel() {
     } finally {
       generating.current = false;
     }
-  }, [eventId]);
-
-  useEffect(() => {
-    void loadEvents();
-  }, [loadEvents]);
+  }, []);
 
   useEffect(() => {
     if (!expires) return;
@@ -105,28 +58,8 @@ export function AttendancePanel() {
       <span className="eyebrow">{t("checkIn")}</span>
       <h3>{t("openStaffQr")}</h3>
       <p className="muted">
-        Select the programme event before generating its attendance QR.
+        Generate a short-lived QR for today's scheduled attendance. Map events are not required.
       </p>
-
-      <label>
-        Programme event
-        <select
-          value={eventId}
-          onChange={(e) => {
-            setEventId(e.target.value);
-            setToken("");
-            setExpires("");
-            setError("");
-          }}
-        >
-          <option value="">Select an event</option>
-          {events.map((event) => (
-            <option key={event.id} value={event.id}>
-              {event.title}
-            </option>
-          ))}
-        </select>
-      </label>
 
       {error && (
         <p className="error" role="alert">
@@ -167,7 +100,6 @@ export function AttendancePanel() {
         <Button
           icon={QrCode}
           onClick={generate}
-          disabled={!eventId}
         >
           Generate QR
         </Button>
