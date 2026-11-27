@@ -1,10 +1,29 @@
-from django.test import TestCase, Client
+from django.core.cache import cache
+from django.test import TestCase as DjangoTestCase, Client
 from django.contrib.auth.models import User
 from core.models import *
 from django.utils import timezone
 import json
 from datetime import timedelta
 from api.common import active_programme_for, milestone_tier
+
+
+class TestCase(DjangoTestCase):
+    """Keep cache-backed state isolated between tests.
+
+    Production rate limits remain enabled; each test starts with a clean cache,
+    while repeated requests inside one test still exercise the real limits.
+    """
+
+    def setUp(self):
+        super().setUp()
+        cache.clear()
+
+    def tearDown(self):
+        try:
+            super().tearDown()
+        finally:
+            cache.clear()
 
 class CoreApiTests(TestCase):
     def setUp(self):
@@ -65,8 +84,8 @@ class V46DataIntegrityTests(TestCase):
         self.programme=Programme.objects.create(name='V46',location='L',max_worker_points=50)
         self.worker_u=User.objects.create_user('v46-worker',password='YouthQuest123!'); self.worker=Profile.objects.create(user=self.worker_u,role='worker',gamertag='Worker',programme=self.programme)
         self.player_u=User.objects.create_user('v46-player',password='YouthQuest123!'); self.player=Profile.objects.create(user=self.player_u,role='youth',gamertag='Player',programme=self.programme)
-    def login(self):
-        r=self.client.post('/api/auth/login/',data=json.dumps({'username':'v46-worker','password':'YouthQuest123!'}),content_type='application/json'); self.assertEqual(r.status_code,200)
+    def login(self, username='v46-worker'):
+        r=self.client.post('/api/auth/login/',data=json.dumps({'username':username,'password':'YouthQuest123!'}),content_type='application/json'); self.assertEqual(r.status_code,200)
     def test_completed_game_can_be_assigned_again_to_same_player(self):
         self.login()
         game=Challenge.objects.create(programme=self.programme,kind='reaction',title='Reaction',description='React',retries_per_player=3)
@@ -79,6 +98,31 @@ class V46DataIntegrityTests(TestCase):
         new=GameAssignment.objects.get(id=r.json()['ids'][0])
         self.assertTrue(new.active)
         self.assertGreater(new.assigned_at,old.assigned_at)
+
+    def test_game_can_be_reassigned_repeatedly_without_reconfiguring_it(self):
+        self.login()
+        game=Challenge.objects.create(programme=self.programme,kind='reaction',title='Reusable reaction',description='React',retries_per_player=3)
+        first=GameAssignment.objects.create(game=game,assigned_by=self.worker_u,target_profile=self.player)
+        other_profiles=[]
+        for index in (2,3):
+            user=User.objects.create_user(f'v46-player-{index}',password='YouthQuest123!')
+            other_profiles.append(Profile.objects.create(user=user,role='youth',gamertag=f'Player {index}',programme=self.programme))
+        second_response=self.client.post('/api/staff/games/',data=json.dumps({
+            'action':'reassign_assignment','assignmentId':first.id,'profileId':other_profiles[0].id,
+        }),content_type='application/json')
+        self.assertEqual(second_response.status_code,200,second_response.json())
+        second=GameAssignment.objects.get(pk=second_response.json()['id'])
+        third_response=self.client.post('/api/staff/games/',data=json.dumps({
+            'action':'reassign_assignment','assignmentId':second.id,'profileId':other_profiles[1].id,
+        }),content_type='application/json')
+        self.assertEqual(third_response.status_code,200,third_response.json())
+        third=GameAssignment.objects.get(pk=third_response.json()['id'])
+        first.refresh_from_db(); second.refresh_from_db(); game.refresh_from_db()
+        self.assertFalse(first.active)
+        self.assertFalse(second.active)
+        self.assertTrue(third.active)
+        self.assertTrue(game.active)
+        self.assertEqual(GameAssignment.objects.filter(game=game).count(),3)
 
     def test_reassignment_creates_new_lifecycle(self):
         self.login(); game=Challenge.objects.create(programme=self.programme,kind='drawing',title='Triangle',description='Draw',shape='triangle',retries_per_player=1,score_ranges=[{'min':0,'max':100,'xp':10}])
@@ -199,7 +243,7 @@ class SecurityRegressionTests(TestCase):
     def test_new_attendance_session_invalidates_previous_session(self):
         self.login('worker')
         first = self.client.post('/api/attendance/session/', data='{}', content_type='application/json').json()['token']
-        second = self.client.post('/api/attendance/session/', data='{}', content_type='application/json').json()['token']
+        second = self.client.post('/api/attendance/session/', data=json.dumps({'previousToken': first}), content_type='application/json').json()['token']
         self.assertNotEqual(first, second)
         self.client.logout()
         self.login('youth')
@@ -237,6 +281,17 @@ class QrAndThemeTests(TestCase):
         self.login('worker2')
         r=self.client.post('/api/worker/avatar/',data=json.dumps({'profileId':self.youth.id,'avatar':'rocket'}),content_type='application/json')
         self.assertEqual(r.status_code,200); self.youth.refresh_from_db(); self.assertEqual(self.youth.avatar,'rocket')
+    def test_public_points_qr_is_available_even_when_public_leaderboard_is_hidden(self):
+        self.login('youth2')
+        generated=self.client.post('/api/points/qr/',data=json.dumps({'renew':False}),content_type='application/json')
+        self.assertEqual(generated.status_code,200)
+        token=generated.json()['token']
+        self.programme.public_enabled=False
+        self.programme.save(update_fields=['public_enabled'])
+        self.client.logout()
+        info=self.client.get('/api/public/points-info/',{'token':token})
+        self.assertEqual(info.status_code,200)
+        self.assertEqual(info.json()['gamertag'],'Nova')
 
 
 class FeaturePermissionTests(TestCase):
@@ -252,6 +307,23 @@ class FeaturePermissionTests(TestCase):
         self.login('adm')
         r=self.client.post('/api/admin/config/',data=json.dumps({'programmeId':self.programme.id,'milestones':[{'tier':'bronze','xp':10},{'tier':'silver','xp':100},{'tier':'gold','xp':200},{'tier':'diamond','xp':500},{'tier':'platinum','xp':1000}]}),content_type='application/json')
         self.assertEqual(r.status_code,200); self.programme.refresh_from_db(); self.assertEqual(len(self.programme.milestones),5)
+    def test_admin_can_reassign_youth_and_worker_accounts_to_any_instance(self):
+        destination=Programme.objects.create(name='Destination instance',location='Other')
+        youth_user=User.objects.create_user('transfer-youth',password='YouthQuest123!')
+        youth=Profile.objects.create(user=youth_user,role='youth',gamertag='Transfer Youth',programme=self.programme)
+        worker_user=User.objects.create_user('transfer-worker',password='YouthQuest123!')
+        worker=Profile.objects.create(user=worker_user,role='worker',gamertag='Transfer Worker',programme=self.programme)
+        self.login('adm')
+        instances=self.client.get('/api/admin/instances/')
+        self.assertEqual(instances.status_code,200)
+        self.assertIn(destination.id,[x['id'] for x in instances.json()['items']])
+        for account in (youth,worker):
+            response=self.client.post('/api/staff/accounts/',data=json.dumps({
+                'action':'reassign_programme','userId':account.user_id,'programmeId':destination.id,
+            }),content_type='application/json')
+            self.assertEqual(response.status_code,200,response.json())
+            account.refresh_from_db()
+            self.assertEqual(account.programme_id,destination.id)
     def test_worker_over_limit_creates_pending_request(self):
         self.login('wrk')
         r=self.client.post('/api/points/awards/',data=json.dumps({'profileId':self.youth.id,'amount':51,'reason':'Big award'}),content_type='application/json')
@@ -620,7 +692,7 @@ class ScratchCardFulfilmentAndAccountAccessTests(TestCase):
 
     def test_xp_scratch_claim_is_auto_awarded_without_fulfilment(self):
         reward=Reward.objects.create(programme=self.programme,name='XP Card',description='',awards=[{'name':'10 XP','type':'xp','value':'10','xp':10,'quantity':1,'remaining':1,'weightage':1,'available':True}],fallback_xp=0)
-        RewardAssignment.objects.create(reward=reward,target_profile=self.player,assigned_by=self.worker)
+        RewardAssignment.objects.create(reward=reward,target_profile=self.player,assigned_by=self.worker_user)
         self.login('scratch-player')
         response=self.client.post('/api/scratch/claim/',data=json.dumps({'rewardId':reward.id}),content_type='application/json')
         self.assertEqual(response.status_code,201)
@@ -634,7 +706,7 @@ class ScratchCardFulfilmentAndAccountAccessTests(TestCase):
 
     def test_pending_reward_assignment_is_upgraded_to_claim_result(self):
         reward=Reward.objects.create(programme=self.programme,name='Mystery Card',description='',awards=[{'name':'25 XP','type':'xp','xp':25,'quantity':1,'remaining':1,'weightage':1,'available':True}],fallback_xp=0)
-        RewardAssignment.objects.create(reward=reward,target_profile=self.player,assigned_by=self.worker)
+        RewardAssignment.objects.create(reward=reward,target_profile=self.player,assigned_by=self.worker_user)
         from core.services import create_notification
         pending=create_notification(profile=self.player,title='New reward available',body='Mystery Card is now available.',kind='reward',url='/rewards')
         self.assertIsNotNone(pending)
@@ -659,7 +731,7 @@ class ScratchCardFulfilmentAndAccountAccessTests(TestCase):
 
     def test_physical_scratch_claim_creates_pending_fulfilment(self):
         reward=Reward.objects.create(programme=self.programme,name='Pizza Card',description='',awards=[{'name':'Pizza','type':'physical','value':'Large pizza','xp':0,'quantity':1,'remaining':1,'weightage':1,'available':True}],fallback_xp=0)
-        RewardAssignment.objects.create(reward=reward,target_profile=self.player,assigned_by=self.worker)
+        RewardAssignment.objects.create(reward=reward,target_profile=self.player,assigned_by=self.worker_user)
         self.login('scratch-player')
         response=self.client.post('/api/scratch/claim/',data=json.dumps({'rewardId':reward.id}),content_type='application/json')
         self.assertEqual(response.status_code,201)
@@ -990,7 +1062,7 @@ class V67PointsAndAttendanceNotificationTests(TestCase):
         self.yu2=User.objects.create_user('v67-youth2',password='YouthQuest123!')
         self.youth2=Profile.objects.create(user=self.yu2,role='youth',gamertag='Player2',programme=self.programme)
         self.group=Group.objects.create(name='Team',programme=self.programme); self.group.members.add(self.youth,self.youth2)
-    def login(self,username):
+    def login(self,username='v67-worker'):
         r=self.client.post('/api/auth/login/',data=json.dumps({'username':username,'password':'YouthQuest123!'}),content_type='application/json'); self.assertEqual(r.status_code,200)
     def test_group_award_and_removal_return_exact_member_count(self):
         self.login('v67-worker')
@@ -1285,3 +1357,84 @@ class LoginAndQrRewardTests(TestCase):
         self.assertEqual(overall['xp'], 75)
         self.assertEqual(overall['rank'], 1)
 
+
+
+class AttendanceConcurrentSessionTests(TestCase):
+    def setUp(self):
+        self.client = Client(enforce_csrf_checks=False)
+        self.programme = Programme.objects.create(name='Concurrent attendance', location='L')
+        self.worker_one_user = User.objects.create_user('qr-worker-one', password='YouthQuest123!')
+        self.worker_one = Profile.objects.create(user=self.worker_one_user, role='worker', gamertag='Worker One', programme=self.programme)
+        self.worker_two_user = User.objects.create_user('qr-worker-two', password='YouthQuest123!')
+        self.worker_two = Profile.objects.create(user=self.worker_two_user, role='worker', gamertag='Worker Two', programme=self.programme)
+        self.youth_user = User.objects.create_user('qr-youth', password='YouthQuest123!')
+        self.youth = Profile.objects.create(user=self.youth_user, role='youth', gamertag='Player', programme=self.programme)
+
+    def login(self, username):
+        response = self.client.post('/api/auth/login/', data=json.dumps({'username': username, 'password': 'YouthQuest123!'}), content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+
+    def test_separate_tabs_do_not_invalidate_each_others_qr(self):
+        self.login('qr-worker-one')
+        first = self.client.post('/api/attendance/session/', data='{}', content_type='application/json').json()['token']
+        second = self.client.post('/api/attendance/session/', data='{}', content_type='application/json').json()['token']
+        self.assertTrue(AttendanceSession.objects.get(token=first).active)
+        self.assertTrue(AttendanceSession.objects.get(token=second).active)
+
+    def test_qr_from_another_programme_reports_assignment_problem_not_expiry(self):
+        self.login('qr-worker-one')
+        token = self.client.post('/api/attendance/session/', data='{}', content_type='application/json').json()['token']
+        other = Programme.objects.create(name='Other programme', location='Elsewhere')
+        other_user = User.objects.create_user('qr-other-youth', password='YouthQuest123!')
+        Profile.objects.create(user=other_user, role='youth', gamertag='Other Player', programme=other)
+        self.client.logout()
+        self.login('qr-other-youth')
+        response = self.client.post('/api/attendance/scan/', data=json.dumps({'token': token}), content_type='application/json')
+        self.assertEqual(response.status_code, 403)
+        self.assertIn('different programme', response.json()['detail'])
+
+    def test_two_workers_can_run_independent_attendance_qrs(self):
+        self.login('qr-worker-one')
+        first = self.client.post('/api/attendance/session/', data='{}', content_type='application/json').json()['token']
+        first_session = AttendanceSession.objects.get(token=first)
+        self.client.logout()
+        self.login('qr-worker-two')
+        second = self.client.post('/api/attendance/session/', data='{}', content_type='application/json').json()['token']
+        second_session = AttendanceSession.objects.get(token=second)
+        self.assertNotEqual(first, second)
+        self.assertTrue(first_session.__class__.objects.get(pk=first_session.pk).active)
+        self.assertTrue(second_session.active)
+        self.assertGreater((second_session.expires_at - timezone.now()).total_seconds(), 55 * 60)
+
+        self.client.logout()
+        self.login('qr-youth')
+        first_scan = self.client.post('/api/attendance/scan/', data=json.dumps({'token': first}), content_type='application/json')
+        second_scan = self.client.post('/api/attendance/scan/', data=json.dumps({'token': second}), content_type='application/json')
+        self.assertEqual(first_scan.status_code, 200)
+        self.assertEqual(second_scan.status_code, 200)
+        self.assertTrue(second_scan.json()['alreadyRewardedToday'])
+
+
+class ScratchCardConfigurationTests(TestCase):
+    def setUp(self):
+        self.client = Client(enforce_csrf_checks=False)
+        self.programme = Programme.objects.create(name='Scratch cards', location='L')
+        self.worker_user = User.objects.create_user('scratch-worker', password='YouthQuest123!')
+        self.worker = Profile.objects.create(user=self.worker_user, role='worker', gamertag='Worker', programme=self.programme)
+
+    def test_xp_only_award_needs_no_prize_label_and_can_never_expire(self):
+        login = self.client.post('/api/auth/login/', data=json.dumps({'username': 'scratch-worker', 'password': 'YouthQuest123!'}), content_type='application/json')
+        self.assertEqual(login.status_code, 200)
+        response = self.client.post('/api/staff/rewards/', data=json.dumps({
+            'name': 'Always available XP',
+            'description': 'A simple XP scratch card',
+            'startAt': 'NOW',
+            'noExpiry': True,
+            'endAt': None,
+            'awards': [{'name': '', 'type': 'xp', 'value': '25', 'quantity': 5, 'weightage': 1}],
+        }), content_type='application/json')
+        self.assertEqual(response.status_code, 201, response.json())
+        reward = Reward.objects.get(pk=response.json()['id'])
+        self.assertIsNone(reward.end_at)
+        self.assertEqual(reward.awards[0]['name'], 'XP points')
+        self.assertEqual(reward.awards[0]['xp'], 25)

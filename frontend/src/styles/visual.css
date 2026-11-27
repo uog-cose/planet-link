@@ -1121,11 +1121,22 @@ body {
     grid-template-columns: 1fr
   }
 
-  .event-timeline-row {
-    grid-template-columns: 52px minmax(0, 1fr)
+  .event-timeline-row summary {
+    grid-template-columns: 52px minmax(0, 1fr) 26px;
+    align-items: start;
   }
 
-  .event-timeline-row>.pill,
+  .event-timeline-row summary:after {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .event-timeline-row summary > .pill {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: start;
+  }
+
   .event-timeline-row>.top-actions {
     grid-column: 2;
     justify-content: flex-start
@@ -6570,9 +6581,9 @@ textarea:focus-visible {
 .youth-dashboard-v3 .yq-kid-hero::before,
 .youth-dashboard-v3 .yq-kid-hero::after { display: none; }
 .youth-dashboard-v3 .yq-kid-kicker {
-  color: var(--buttonText, #fff);
-  background: rgba(255, 255, 255, .14);
-  border: 1px solid rgba(255, 255, 255, .28);
+  color: var(--text);
+  background: var(--tile1);
+  border: 1px solid var(--border);
 }
 .youth-dashboard-v3 .yq-kid-hero h1 { color: var(--buttonText, #fff); }
 .youth-dashboard-v3 .yq-kid-hero p {
@@ -6593,6 +6604,7 @@ textarea:focus-visible {
 .password-visibility:hover { color: var(--text); background: var(--surface-2, var(--surface)); }
 .weekday-checkboxes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .weekday-option { display: inline-flex; align-items: center; gap: 7px; padding: 8px 11px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+.weekday-option input[type="checkbox"] { accent-color: var(--accent); }
 .attendance-days-config { margin: 14px 0 18px; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
 
 .attendance-restore-panel { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); display: grid; gap: 10px; }

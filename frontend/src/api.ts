@@ -115,7 +115,8 @@ export async function api<T>(
     path !== "/auth/login/" &&
     path !== "/auth/logout/" &&
     path !== "/auth/password-reset/" &&
-    path !== "/auth/me/"
+    path !== "/auth/me/" &&
+    path !== "/attendance/scan/"
   ) {
     if (!hasClientSessionCookie()) {
       if (location.pathname !== "/login") location.replace("/login");

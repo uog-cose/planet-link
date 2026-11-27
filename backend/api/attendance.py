@@ -13,13 +13,24 @@ def attendance_session(request):
     if not programme:
         return ok({"detail": "No active programme"}, 400)
     now = timezone.now()
-    AttendanceSession.objects.filter(programme=programme, active=True).update(active=False)
-    AttendanceSession.objects.filter(programme=programme, expires_at__lt=now).update(active=False)
+    body = parse_json(request) or {}
+    previous_token = str(body.get("previousToken") or "").strip()
     token = secrets.token_urlsafe(32)
-    session = AttendanceSession.objects.create(
-        programme=programme, event=None, created_by=request.user, token=token,
-        expires_at=now + timedelta(minutes=10),
-    )
+    with transaction.atomic():
+        if previous_token:
+            AttendanceSession.objects.filter(
+                programme=programme, created_by=request.user,
+                token=previous_token, active=True,
+            ).update(active=False)
+        # Expire stale sessions independently; do not invalidate other live QRs.
+        AttendanceSession.objects.filter(
+            programme=programme, active=True, expires_at__lt=now,
+        ).update(active=False)
+        session = AttendanceSession.objects.create(
+            programme=programme, event=None, created_by=request.user, token=token,
+            # Allow enough time for a group to scan without racing the expiry timer.
+            expires_at=now + timedelta(minutes=60),
+        )
     return ok({"token": token, "expiresAt": session.expires_at})
 
 
@@ -36,11 +47,23 @@ def attendance_scan(request):
         return ok({"detail": "No active programme"}, 400)
     now = timezone.now()
     today = programme_local_date(programme, now)
+    raw_token = str(body.get("token") or "").strip()
+    if not raw_token:
+        return ok({"detail": "No attendance QR token was supplied. Scan the QR again."}, 400)
     session = AttendanceSession.objects.filter(
-        token=body.get("token"), active=True, expires_at__gte=now, programme=programme,
+        token=raw_token, programme=programme,
     ).select_related("created_by").first()
     if not session:
-        return ok({"detail": "QR expired or invalid. Ask your youth worker for a current attendance QR."}, 400)
+        other_programme_session = AttendanceSession.objects.filter(token=raw_token).only("programme_id").first()
+        if other_programme_session:
+            return ok({"detail": "This attendance QR belongs to a different programme. Ask staff to check your programme assignment."}, 403)
+        return ok({"detail": "This attendance QR could not be recognised. Ask your youth worker to generate a new one."}, 400)
+    if not session.active:
+        return ok({"detail": "This attendance QR has been replaced or revoked. Ask your youth worker to display the latest code."}, 400)
+    if session.expires_at < now:
+        session.active = False
+        session.save(update_fields=["active"])
+        return ok({"detail": "This attendance QR has expired. Ask your youth worker to generate a new one."}, 400)
 
     from core.services import effective_attendance_days, scheduled_attendance_streak
     allowed_days = effective_attendance_days(profile, programme)

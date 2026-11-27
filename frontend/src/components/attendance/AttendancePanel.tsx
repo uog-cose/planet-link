@@ -15,13 +15,13 @@ export function AttendancePanel() {
   const [expires, setExpires] = useState("");
   const [error, setError] = useState("");
   const generating = useRef(false);
+  const tokenRef = useRef("");
 
   const generate = useCallback(async () => {
     if (generating.current) return;
 
     generating.current = true;
     setError("");
-    setToken("");
 
     try {
       const data = await api<{
@@ -29,9 +29,10 @@ export function AttendancePanel() {
         expiresAt: string;
       }>("/attendance/session/", {
         method: "POST",
-        body: JSON.stringify({}),
+        body: JSON.stringify({ previousToken: tokenRef.current }),
       });
 
+      tokenRef.current = data.token;
       setToken(data.token);
       setExpires(data.expiresAt);
     } catch (err) {
@@ -58,7 +59,7 @@ export function AttendancePanel() {
       <span className="eyebrow">{t("checkIn")}</span>
       <h3>{t("openStaffQr")}</h3>
       <p className="muted">
-        Generate a short-lived QR for today's scheduled attendance. Map events are not required.
+        Generate a secure attendance QR for today. It stays active for up to 60 minutes and can be scanned by everyone assigned to this programme.
       </p>
 
       {error && (
