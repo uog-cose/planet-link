@@ -9,7 +9,8 @@ def admin_instances(request):
         return ok({"detail": "Forbidden"}, 403)
     if request.method == "GET":
         memberships = Programme.objects.all().order_by('name', 'id')
-        current_id = actor.programme_id
+        selected_programme = active_programme_for(actor)
+        current_id = selected_programme.id if selected_programme else None
         return ok({"items": [
             {"id": p.id, "name": p.name, "location": p.location, "active": p.active,
              "status": p.status, "publicEnabled": p.public_enabled, "current": p.id == current_id}
@@ -20,14 +21,12 @@ def admin_instances(request):
     action = str(body.get("action", "create")).strip().lower()
     if action == "switch":
         try:
-            programme = Programme.objects.get(pk=int(body.get("programmeId")), active=True)
+            programme = Programme.objects.get(pk=int(body.get("programmeId")), active=True, status="active")
         except (TypeError, ValueError, Programme.DoesNotExist):
             return ok({"detail": "Programme not found"}, 404)
-        if not user_can_access_programme(request.user, programme):
-            # Admins manage programme instances globally; establish an explicit
-            # membership when switching so subsequent programme-scoped queries
-            # remain authorised without weakening youth-worker isolation.
-            ProgrammeMembership.objects.get_or_create(user=request.user, programme=programme)
+        # Record each explicit admin selection for auditability even though
+        # administrators have organisation-wide programme access.
+        ProgrammeMembership.objects.get_or_create(user=request.user, programme=programme)
         actor.programme = programme
         actor.save(update_fields=["programme"])
         try:
@@ -128,6 +127,7 @@ def admin_instances(request):
                     programme=programme, name=reward.name, description=reward.description, cost_xp=reward.cost_xp,
                     start_at=reward.start_at, end_at=reward.end_at, active=reward.active,
                     awards=json.loads(json.dumps(reward.awards or [])),
+                    fallback_xp=reward.fallback_xp,
                 )
                 reward_map[reward.id] = cloned
             for skill in Skill.objects.filter(programme=source).prefetch_related('milestone_records'):
@@ -146,10 +146,16 @@ def admin_instances(request):
                     xp_reward=game.xp_reward, start_at=None, end_at=None, due_at=None, active=game.active,
                     shape=game.shape, score_ranges=json.loads(json.dumps(game.score_ranges or [])),
                     retries_per_player=game.retries_per_player,
+                    scoring_policy=game.scoring_policy,
+                    game_config=json.loads(json.dumps(game.game_config or {})),
                 )
         else:
             programme = Programme.objects.create(name=name, location=location, active=True, status="active", public_enabled=False)
         ProgrammeMembership.objects.get_or_create(user=request.user, programme=programme)
+        current_programme = actor.programme if actor.programme_id else None
+        if not current_programme or not current_programme.active or current_programme.status != 'active':
+            actor.programme = programme
+            actor.save(update_fields=['programme', 'updated_at'])
     try:
         AuditLog.objects.create(actor=request.user, programme=programme, action="programme_created", target=str(programme.id), detail={"name": programme.name, "clonedFrom": source.id if source else None})
     except DatabaseError:

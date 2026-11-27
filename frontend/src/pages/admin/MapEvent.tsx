@@ -23,11 +23,11 @@ import { appUrl } from "../../config";
 const localDateTime = (offsetMs = 0) => {
   const d = new Date(Date.now() + offsetMs);
   const p = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}T${p(d.getHours())}:${p(d.getMinutes())}`;
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
 };
 const EDINBURGH = { lat: 55.9533, lng: -3.1883 };
 const newEvent = () => {
-  const startAt = localDateTime();
+  const startAt = "NOW";
   return {
     title: "",
     description: "",
@@ -54,7 +54,7 @@ const localInput = (value: any) => {
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return "";
   const p = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}T${p(d.getHours())}:${p(d.getMinutes())}`;
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
 };
 // const plus24Hours = (value: string) => {
 //   const base = value === "NOW" ? localDateTime() : value;
@@ -102,9 +102,17 @@ export function MapEvent() {
       setMapInstanceId(r.mapAccess?.instanceId || null);
       setMapToken(r.mapAccess?.token || "");
       setMapAccessCode(r.mapAccess?.token || "");
+      const savedExpiry = r.mapAccess?.expiresAt
+        ? localInput(r.mapAccess.expiresAt)
+        : "";
+
+      const savedExpiryTime = savedExpiry
+        ? new Date(savedExpiry).getTime()
+        : 0;
+
       setMapExpires(
-        r.mapAccess?.expiresAt
-          ? localInput(r.mapAccess.expiresAt)
+        savedExpiryTime > Date.now() + 60000
+          ? savedExpiry
           : localDateTime(86400000),
       );
     });

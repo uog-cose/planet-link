@@ -48,6 +48,7 @@ const draft = () => ({
   description: "",
   startAt: "NOW",
   endAt: localDateTime(86400000),
+  noExpiry: false,
   fallbackXp: 0,
   awards: [blank()] as Award[],
 });
@@ -122,7 +123,7 @@ export function RewardsConfig({ embedded = false }: { embedded?: boolean }) {
         rewardId: editingId || undefined,
         fallbackXp: Math.max(0, Number(f.fallbackXp) || 0),
         awards: f.awards
-          .filter((a: any) => a.name.trim())
+          .filter((a: any) => a.name.trim() || a.type === "xp")
           .map((a: any) => ({
             ...a,
             value:
@@ -242,12 +243,25 @@ export function RewardsConfig({ embedded = false }: { embedded?: boolean }) {
             onChange={(v) => setF({ ...f, startAt: v })}
             allowPast={Boolean(editingId)}
           />
-          <CalendarField
-            label="Ends"
-            value={f.endAt}
-            onChange={(v) => setF({ ...f, endAt: v })}
-            allowPast={Boolean(editingId)}
-          />
+          <div>
+            <label className="scratch-no-expiry-toggle">
+              <input
+                type="checkbox"
+                checked={Boolean(f.noExpiry)}
+                onChange={(e) => setF({ ...f, noExpiry: e.target.checked })}
+              />
+              <span>Never expires</span>
+            </label>
+            {!f.noExpiry && (
+              <CalendarField
+                label="Ends"
+                value={f.endAt}
+                onChange={(v) => setF({ ...f, endAt: v })}
+                allowPast={Boolean(editingId)}
+              />
+            )}
+            {f.noExpiry && <small className="muted">This scratch card stays active until staff deactivate or delete it.</small>}
+          </div>
           <label>
             Fallback XP
             <input
@@ -290,14 +304,6 @@ export function RewardsConfig({ embedded = false }: { embedded?: boolean }) {
         {f.awards.map((a: Award, i: number) => (
           <div className="grid-4 scratch-prize-row" key={i}>
             <label>
-              Prize
-              <input
-                value={a.name}
-                onChange={(e) => setAward(i, "name", e.target.value)}
-                placeholder="Pizza"
-              />
-            </label>
-            <label>
               Type
               <select
                 value={a.type}
@@ -308,6 +314,15 @@ export function RewardsConfig({ embedded = false }: { embedded?: boolean }) {
                 <option value="xp">XP</option>
                 <option value="other">Other</option>
               </select>
+            </label>
+            <label>
+              Prize {a.type === "xp" ? "(optional)" : ""}
+              <input
+                value={a.name}
+                onChange={(e) => setAward(i, "name", e.target.value)}
+                placeholder={a.type === "xp" ? "XP points" : "e.g. Pizza"}
+                required={a.type !== "xp"}
+              />
             </label>
             <label>
               {a.type === "xp" ? "XP amount" : "Value / detail"}
@@ -390,7 +405,7 @@ export function RewardsConfig({ embedded = false }: { embedded?: boolean }) {
           <Button
             icon={Save}
             disabled={
-              saving || !f.name || !f.awards.some((a: any) => a.name.trim())
+              saving || !f.name || !f.awards.some((a: any) => a.name.trim() || a.type === "xp")
             }
             onClick={save}
           >
@@ -423,7 +438,7 @@ export function RewardsConfig({ embedded = false }: { embedded?: boolean }) {
                   <h3>{r.name}</h3>
                   <p className="muted">
                     {r.description || "No description"} ·{" "}
-                    {(r.awards || []).length} prize types
+                    {(r.awards || []).length} prize types · {r.end_at ? `Ends ${new Date(r.end_at).toLocaleDateString("en-GB")}` : "No expiry"}
                   </p>
                 </div>
                 <div className="top-actions">
@@ -436,6 +451,7 @@ export function RewardsConfig({ embedded = false }: { embedded?: boolean }) {
                         description: r.description || "",
                         startAt: r.start_at || "NOW",
                         endAt: r.end_at || localDateTime(86400000),
+                        noExpiry: !r.end_at,
                         fallbackXp: Number(r.fallback_xp || 0),
                         awards: (r.awards || []).map(normalize),
                       });

@@ -14,7 +14,7 @@ export function Attendance() {
         <div>
           <span className="eyebrow">CHECK IN</span>
           <h2>Attendance</h2>
-          <p>Participants can scan a short-lived staff QR.</p>
+          <p>Display one QR for up to 60 minutes; refreshing this screen only replaces the QR generated in this browser.</p>
         </div>
       </div>
       <AttendancePanel />

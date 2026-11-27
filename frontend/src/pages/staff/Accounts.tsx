@@ -258,7 +258,7 @@ export function Accounts({ role }: { role: "worker" | "admin" }) {
                       void accountAction({ action: "reassign_programme", userId: x.userId, programmeId }, `${x.gamertag} reassigned to the selected programme`);
                     }}>
                       <option value="">No programme</option>
-                      {programmes.map((programme) => <option key={programme.id} value={programme.id}>{programme.name}</option>)}
+                      {programmes.filter((programme) => programme.active && programme.status === "active").map((programme) => <option key={programme.id} value={programme.id}>{programme.name}</option>)}
                     </select>
                     <small className="muted">Changing programme closes current group memberships but preserves historical XP and audit records.</small>
                   </label>}

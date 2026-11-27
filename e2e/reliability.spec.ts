@@ -38,6 +38,10 @@ test.describe('Youth Quest reliability flows',()=>{
     },{csrf});
     expect(created.ok).toBeTruthy();
     await page.goto('/admin/map-event');
+    const timelineRow=page.locator('.map-event-timeline-card .event-timeline-row').filter({hasText:'E2E Map Event'});
+    await expect(timelineRow).toBeVisible();
+    const summaryWidth=await timelineRow.locator('summary').evaluate(el=>el.getBoundingClientRect().width);
+    expect(summaryWidth).toBeGreaterThan(300);
     await page.getByLabel('Map access key').fill('QUEST26');
     await page.getByRole('button',{name:'Save expiry'}).click();
     await page.goto('/public/map/1/QUEST26');
@@ -83,4 +87,44 @@ test('young person dashboard restores the points QR and opens it as a modal',asy
   await expect(page.locator('.points-qr-backdrop')).toBeVisible();
   await page.mouse.click(8,8);
   await expect(page.getByRole('dialog',{name:'Your points QR'})).toHaveCount(0);
+});
+
+
+test("worker attendance QR scans successfully from the young person's browser",async({page,browser})=>{
+  await quickLogin(page,'worker');
+  await page.goto('/attendance');
+  const sessionResponse=page.waitForResponse(r=>r.url().includes('/api/attendance/session/')&&r.request().method()==='POST');
+  await page.getByRole('button',{name:'Generate QR'}).click();
+  const session=await (await sessionResponse).json();
+  expect(session.token).toBeTruthy();
+  expect(new Date(session.expiresAt).getTime()).toBeGreaterThan(Date.now()+55*60_000);
+
+  const youthContext=await browser.newContext({baseURL:'http://localhost:5174'});
+  try {
+    const youthPage=await youthContext.newPage();
+    await youthPage.goto(`/check-in?token=${encodeURIComponent(session.token)}`);
+    await expect(youthPage).toHaveURL(/\/login$/,{timeout:15000});
+    await youthPage.getByRole('button',{name:'Alex'}).click();
+    await expect(youthPage.getByRole('heading',{name:'Attendance recorded'})).toBeVisible({timeout:15000});
+    await expect(youthPage.getByText('Attendance recorded for today.')).toBeVisible();
+    await youthPage.reload();
+    await expect(youthPage.getByText(/already been recorded today/i)).toBeVisible({timeout:15000});
+  } finally {
+    await youthContext.close();
+  }
+});
+
+
+test('scratch card setup supports XP-only prizes and no expiry',async({page})=>{
+  await quickLogin(page,'worker');
+  await page.goto('/worker/scratch-cards');
+  await page.getByRole('button',{name:/Create scratch card/}).click();
+  await expect(page.getByText('Never expires')).toBeVisible();
+  const fields=page.locator('.scratch-prize-row label');
+  await expect(fields.nth(0)).toContainText('Type');
+  await expect(fields.nth(1)).toContainText('Prize');
+  await page.getByLabel('Type').selectOption('xp');
+  await expect(page.getByLabel('Prize (optional)')).not.toHaveAttribute('required','');
+  await page.getByLabel('Never expires').check();
+  await expect(page.getByText('This scratch card stays active until staff deactivate or delete it.')).toBeVisible();
 });

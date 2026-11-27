@@ -230,7 +230,7 @@ def public_points_info(request):
     qr = PointsQrToken.objects.select_related('profile', 'profile__programme').filter(
         token_hash=token_hash(raw), active=True, profile__role='youth',
         profile__user__is_active=True, profile__programme__active=True,
-        profile__programme__status='active', profile__programme__public_enabled=True,
+        profile__programme__status='active',
     ).first()
     if not qr:
         return ok({'detail': 'This public points QR is invalid or no longer active.'}, 404)
@@ -282,7 +282,7 @@ def public_points_request(request):
     qr = PointsQrToken.objects.select_related('profile', 'profile__programme').filter(
         token_hash=token_hash(raw), active=True, profile__role='youth',
         profile__user__is_active=True, profile__programme__active=True,
-        profile__programme__status='active', profile__programme__public_enabled=True,
+        profile__programme__status='active',
     ).first()
     if not qr:
         return ok({'detail': 'This public points QR is invalid or no longer active.'}, 404)

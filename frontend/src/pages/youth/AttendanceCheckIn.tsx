@@ -41,7 +41,7 @@ export function AttendanceCheckIn() {
           return;
         }
         const errorMessage = (e as Error).message || "";
-        const isExpiredQr = /QR expired|invalid QR|expired or invalid/i.test(errorMessage);
+        const isExpiredQr = /attendance QR.*(expired|replaced|revoked|could not be recognised)|QR expired|invalid QR|expired or invalid/i.test(errorMessage);
 
         setMessage(
           isExpiredQr

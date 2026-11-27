@@ -87,15 +87,33 @@ def auth_required(view):
 def user_can_access_programme(user, programme):
     if not user or not getattr(user, "is_authenticated", False) or not programme:
         return False
+    profile = getattr(user, 'profile', None)
+    if profile and profile.role == 'admin':
+        return True
     if ProgrammeMembership.objects.filter(user=user, programme=programme).exists():
         return True
-    return getattr(getattr(user, 'profile', None), 'programme_id', None) == programme.id
+    return getattr(profile, 'programme_id', None) == programme.id
 
 def active_programme_for(profile=None):
-    if not profile or not profile.programme_id:
+    if not profile:
         return None
-    programme=profile.programme
-    return programme if programme and programme.active and programme.status == 'active' else None
+    programme = profile.programme if profile.programme_id else None
+    if programme and programme.active and programme.status == 'active':
+        return programme
+    if profile.role != 'admin':
+        return None
+    programme = Programme.objects.filter(
+        active=True, status='active'
+    ).order_by('name', 'id').first()
+    if not programme:
+        return None
+    if profile.programme_id != programme.id:
+        Profile.objects.filter(pk=profile.pk).update(programme=programme)
+        profile.programme = programme
+    ProgrammeMembership.objects.get_or_create(
+        user_id=profile.user_id, programme=programme
+    )
+    return programme
 
 def token_hash(raw):
     return hashlib.sha256(raw.encode()).hexdigest()

@@ -22,6 +22,7 @@ type Instance = {
   id: number;
   name: string;
   location: string;
+  active: boolean;
   status: string;
   publicEnabled: boolean;
   current: boolean;
@@ -73,7 +74,7 @@ export function ProgrammeInstances() {
   const cloneOptions = useMemo(
     () =>
       items
-        .filter((item) => item.status !== "archived")
+        .filter((item) => item.active && item.status === "active")
         .map((item) => ({
           value: String(item.id),
           label: `${item.name} · ${item.location}`,
@@ -344,7 +345,7 @@ export function ProgrammeInstances() {
                   </small>
                 </div>
                 <div className="instance-row-actions">
-                  {!item.current && item.status !== "archived" && (
+                  {!item.current && item.active && item.status === "active" && (
                     <Button
                       variant="secondary"
                       icon={Building2}
@@ -354,7 +355,7 @@ export function ProgrammeInstances() {
                       {t("select")}
                     </Button>
                   )}
-                  {item.status !== "archived" && (
+                  {item.active && item.status === "active" && (
                     <Button
                       variant="ghost"
                       icon={item.publicEnabled ? EyeOff : Eye}
@@ -369,7 +370,7 @@ export function ProgrammeInstances() {
                       {item.publicEnabled ? t("hide") : t("unhide")}
                     </Button>
                   )}
-                  {!item.current && item.status !== "archived" && (
+                  {!item.current && item.active && item.status === "active" && (
                     <Button
                       variant="ghost"
                       icon={Archive}

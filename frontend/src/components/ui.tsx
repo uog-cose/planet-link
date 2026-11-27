@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { Icon } from "./Icon";
 import {
   LucideIcon,
@@ -155,7 +156,7 @@ export function ConfirmDialog({
       setBusy(false);
     }
   };
-  return (
+  return createPortal(
     <div
       className="modal-backdrop"
       role="presentation"
@@ -185,10 +186,10 @@ export function ConfirmDialog({
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
-
 export function PlayerListDialog({
   open,
   title,

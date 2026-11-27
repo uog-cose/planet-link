@@ -592,7 +592,7 @@ export function YouthDashboard() {
               </span>
               <div>
                 <span className="yq-kid-eyebrow">SHOWING UP IS A WIN</span>
-                <h2>Onsite event attendance</h2>
+                <h2>Attendance check-in streak</h2>
               </div>
             </div>
             <div className="yq-kid-streak-banner">
@@ -603,8 +603,8 @@ export function YouthDashboard() {
                 <strong>{data.onsiteAttendanceStreak?.current || data.profile?.streak || 0} day check-in streak</strong>
                 <span>
                   {data.onsiteAttendanceStreak?.hasAttendedToday
-                    ? "Today's event check-in is counted. Great work!"
-                    : "Scan the youth worker's QR code when you arrive at an onsite event."}
+                    ? "Today's attendance check-in is counted. Great work!"
+                    : "Scan the youth worker's QR code on one of your scheduled attendance days."}
                 </span>
               </div>
               <span className="yq-kid-streak-badge">

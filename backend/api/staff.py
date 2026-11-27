@@ -85,7 +85,7 @@ def staff_accounts(request):
         if actor.role != 'admin':
             return ok({'detail':'Only administrators can reassign programme membership.'},403)
         try:
-            target = User.objects.select_related('profile').get(id=int(body.get('userId')), profile__isnull=False)
+            target = User.objects.select_related('profile').get(id=int(body.get('userId')), profile__role__in=['youth', 'worker'])
             destination = Programme.objects.get(id=int(body.get('programmeId')), active=True, status='active')
         except (TypeError, ValueError, User.DoesNotExist, Programme.DoesNotExist):
             return ok({'detail':'Select a valid account and active destination programme.'},404)
@@ -94,12 +94,30 @@ def staff_accounts(request):
         if old_programme_id == destination.id:
             return ok({'ok':True,'programmeId':destination.id,'detail':'Account is already assigned to this programme.'})
         with transaction.atomic():
-            GroupMembership.objects.filter(profile=profile,status='active',left_at__isnull=True).update(status='transferred',left_at=timezone.now(),changed_by=request.user,reason='Programme reassignment')
+            if old_programme_id:
+                AttendanceSession.objects.filter(
+                    programme_id=old_programme_id, created_by=target, active=True
+                ).update(active=False)
+            GroupMembership.objects.filter(
+                profile=profile, status__in=['active', 'inactive'], left_at__isnull=True
+            ).update(
+                status='transferred', left_at=timezone.now(),
+                changed_by=request.user, reason='Programme reassignment',
+            )
             profile.groups.clear()
             profile.programme = destination
-            profile.save(update_fields=['programme','updated_at'])
-            ProgrammeMembership.objects.get_or_create(user=target,programme=destination)
-            AuditLog.objects.create(actor=request.user,programme=destination,action='profile_reassigned_programme',target=str(profile.id),detail={'fromProgrammeId':old_programme_id,'toProgrammeId':destination.id})
+            profile.attendance_days = None
+            profile.streak = 0
+            profile.save(update_fields=['programme', 'attendance_days', 'streak', 'updated_at'])
+            ProgrammeMembership.objects.filter(user=target).exclude(
+                programme=destination
+            ).delete()
+            ProgrammeMembership.objects.get_or_create(user=target, programme=destination)
+            AuditLog.objects.create(
+                actor=request.user, programme=destination,
+                action='profile_reassigned_programme', target=str(profile.id),
+                detail={'fromProgrammeId': old_programme_id, 'toProgrammeId': destination.id},
+            )
         return ok({'ok':True,'programmeId':destination.id})
     if body.get('action') in {'set_access','delete'}:
         try: target=User.objects.select_related('profile').get(id=int(body.get('userId'))) if actor.role=='admin' else User.objects.select_related('profile').get(id=int(body.get('userId')),profile__programme=active_programme_for(actor))
@@ -342,15 +360,16 @@ def staff_rewards(request):
         for i,a in enumerate(awards[:30]):
             if not isinstance(a,dict): continue
             an=str(a.get('name','')).strip()[:120]
-            if not an: continue
+            atype=str(a.get('type','xp')).strip().lower()
+            if atype not in {'xp','physical','voucher','other'}: atype='other'
+            if not an and atype != 'xp': continue
+            if not an: an='XP points'
             try: quantity=max(1,int(str(a.get('quantity',1)).lstrip('0') or '1'))
             except (TypeError,ValueError): quantity=1
             try: weight=max(1,int(str(a.get('weightage',a.get('weight',1))).lstrip('0') or '1'))
             except (TypeError,ValueError): weight=1
             try: amount=max(0,int(str(a.get('xp',a.get('value',0))).lstrip('0') or '0'))
             except (TypeError,ValueError): amount=0
-            atype=str(a.get('type','xp')).strip().lower()
-            if atype not in {'xp','physical','voucher','other'}: atype='other'
             value=str(a.get('value',amount if atype=='xp' else '')).strip()[:160]
             previous=old[i] if i < len(old) and isinstance(old[i],dict) else {}
             previous_qty=max(1,int(previous.get('quantity',quantity) or quantity))
@@ -366,7 +385,7 @@ def staff_rewards(request):
             return timezone.make_aware(parsed, timezone.get_current_timezone()) if timezone.is_naive(parsed) else parsed
         try:
             start_at=_reward_dt_update(body.get('startAt'),reward.start_at)
-            end_at=_reward_dt_update(body.get('endAt'),reward.end_at)
+            end_at=None if body.get('noExpiry') is True else _reward_dt_update(body.get('endAt'),reward.end_at)
             if end_at and start_at and end_at<=start_at:return ok({'detail':'End date/time must be after start date/time'},400)
         except Exception:return ok({'detail':'Invalid reward date/time'},400)
         try: fallback_xp=max(0,int(str(body.get('fallbackXp',reward.fallback_xp)).lstrip('0') or '0'))
@@ -432,31 +451,36 @@ def staff_rewards(request):
     for a in awards[:30]:
         if not isinstance(a,dict):continue
         an=str(a.get('name','')).strip()[:120]
-        try: amount=max(0,int(str(a.get('xp',0)).lstrip('0') or '0'))
+        atype=str(a.get('type','xp')).strip().lower()
+        if atype not in {'xp','physical','voucher','other'}: atype='other'
+        if not an and atype != 'xp': continue
+        if not an: an='XP points'
+        try: amount=max(0,int(str(a.get('xp',a.get('value',0))).lstrip('0') or '0'))
         except (TypeError,ValueError): amount=0
         try: quantity=max(1,int(str(a.get('quantity',1)).lstrip('0') or '1'))
         except (TypeError,ValueError): quantity=1
-        if an:
-            try: weight=max(1,int(str(a.get('weightage',a.get('weight',1))).lstrip('0') or '1'))
-            except (TypeError,ValueError): weight=1
-            atype=str(a.get('type','xp')).strip().lower()
-            if atype not in {'xp','physical','voucher','other'}: atype='other'
-            value=str(a.get('value',amount if atype=='xp' else '')).strip()[:160]
-            clean.append({'name':an,'type':atype,'value':value,'xp':amount if atype=='xp' else 0,'quantity':quantity,'remaining':quantity,'weightage':weight,'available':bool(a.get('available',True))})
+        try: weight=max(1,int(str(a.get('weightage',a.get('weight',1))).lstrip('0') or '1'))
+        except (TypeError,ValueError): weight=1
+        value=str(a.get('value',amount if atype=='xp' else '')).strip()[:160]
+        clean.append({'name':an,'type':atype,'value':value,'xp':amount if atype=='xp' else 0,'quantity':quantity,'remaining':quantity,'weightage':weight,'available':bool(a.get('available',True))})
     if not clean:return ok({'detail':'Add at least one valid award'},400)
-    start_at=body.get('startAt') or 'NOW'; end_at=body.get('endAt') or (timezone.now()+timedelta(hours=24)).isoformat()
-    if start_at and end_at:
-        try:
-            sa=timezone.now() if str(start_at).strip().upper()=='NOW' else timezone.datetime.fromisoformat(str(start_at).replace('Z','+00:00')); ea=timezone.datetime.fromisoformat(str(end_at).replace('Z','+00:00'))
-            if timezone.is_naive(sa): sa=timezone.make_aware(sa)
-            if timezone.is_naive(ea): ea=timezone.make_aware(ea)
-            if sa < timezone.now().replace(second=0,microsecond=0):return ok({'detail':'Start date/time has already passed'},400)
-            if ea<=sa:return ok({'detail':'End date/time must be after start date/time'},400)
-        except Exception:return ok({'detail':'Invalid reward date/time'},400)
-    
+    start_at=body.get('startAt') or 'NOW'
+    end_at=None if body.get('noExpiry') is True else (body.get('endAt') or (timezone.now()+timedelta(hours=24)).isoformat())
+    try:
+        sa=timezone.now() if str(start_at).strip().upper()=='NOW' else timezone.datetime.fromisoformat(str(start_at).replace('Z','+00:00'))
+        if timezone.is_naive(sa): sa=timezone.make_aware(sa,timezone.get_current_timezone())
+        ea=None
+        if end_at is not None:
+            ea=timezone.datetime.fromisoformat(str(end_at).replace('Z','+00:00'))
+            if timezone.is_naive(ea): ea=timezone.make_aware(ea,timezone.get_current_timezone())
+        if sa < timezone.now().replace(second=0,microsecond=0): return ok({'detail':'Start date/time has already passed'},400)
+        if ea is not None and ea<=sa: return ok({'detail':'End date/time must be after start date/time'},400)
+    except Exception: return ok({'detail':'Invalid reward date/time'},400)
+
     try: fallback_xp=max(0,int(str(body.get('fallbackXp',0)).lstrip('0') or '0'))
     except (TypeError,ValueError): fallback_xp=0
     def _reward_dt(value):
+        if value is None: return None
         if str(value).strip().upper()=='NOW': return timezone.now()
         raw=str(value).replace('Z','+00:00')
         parsed=timezone.datetime.fromisoformat(raw)
@@ -464,8 +488,6 @@ def staff_rewards(request):
     start_at=_reward_dt(start_at); end_at=_reward_dt(end_at)
     if start_at < timezone.now().replace(second=0,microsecond=0):
         start_at=timezone.now()
-    if end_at <= start_at:
-        end_at=start_at+timedelta(hours=24)
     r=Reward.objects.create(programme=active_programme_for(actor),name=name,description=str(body.get('description','')).strip()[:240],cost_xp=0,start_at=start_at,end_at=end_at,awards=clean,fallback_xp=fallback_xp,active=True)
     AuditLog.objects.create(actor=request.user,action='scratch_card_configured',target=str(r.id),detail={'awardCount':len(clean)})
     return ok({'id':r.id},201)
